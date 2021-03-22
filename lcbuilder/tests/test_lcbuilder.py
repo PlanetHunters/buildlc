@@ -1,3 +1,4 @@
+import os
 import unittest
 from lcbuilder.lcbuilder_class import LcBuilder
 from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
@@ -28,14 +29,16 @@ class TestsLcBuilder(unittest.TestCase):
         self.__test_star_params(star_info)
 
     def test_input_with_id(self):
+        directory = os.path.dirname(__file__) + "/input.csv"
         lc, lc_data, star_info, transits_min_count, sectors, quarters = \
-            LcBuilder().build(MissionInputObjectInfo("TIC 352315023", "input.csv"), "./")
+            LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
         self.assertGreater(len(lc), 0)
         self.__test_star_params(star_info)
 
     def test_input_without_id(self):
+        directory = os.path.dirname(__file__) + "/input.csv"
         lc, lc_data, star_info, transits_min_count, sectors, quarters = \
-            LcBuilder().build(InputObjectInfo("input.csv"), "./")
+            LcBuilder().build(InputObjectInfo(directory), "./")
         self.assertGreater(len(lc), 0)
         self.assertTrue(star_info.mass_assumed)
         self.assertTrue(star_info.radius_assumed)
