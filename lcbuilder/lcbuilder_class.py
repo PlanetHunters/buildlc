@@ -36,19 +36,19 @@ class LcBuilder:
             coords = self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
         if mission is not None and file is None and cadence <= 300:
-            MissionObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
+            return MissionObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
                               initial_detrend_period, star_info, aperture)
         elif mission is not None and file is None and cadence > 300:
-            MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
+            return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
                                    initial_detrend_period, star_info, aperture)
         elif mission is not None and file is not None:
-            MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask, initial_detrend_period,
+            return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask, initial_detrend_period,
                                    star_info, aperture)
         elif mission is None and coords is not None and cadence > 300:
-            MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
+            return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
                                        initial_transit_mask, initial_detrend_period, star_info, aperture)
         elif mission is None and file is not None:
-            InputObjectInfo(file, initial_mask, initial_transit_mask, initial_detrend_period, star_info, aperture)
+            return InputObjectInfo(file, initial_mask, initial_transit_mask, initial_detrend_period, star_info, aperture)
         else:
             raise ValueError(
                 "Invalid target definition with mission=%s, id=%s, coords=%s, sectors=%s, file=%s, cadence=%s")
