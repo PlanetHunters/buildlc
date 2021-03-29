@@ -5,8 +5,8 @@ class InputObjectInfo(ObjectInfo):
     """
     Implementation of ObjectInfo to be used to characterize objects which are to be loaded from a csv file.
     """
-    def __init__(self, input_file, initial_mask=None, initial_detrend_period=None, star_info=None,
-                 aperture_file=None):
+    def __init__(self, input_file, initial_mask=None, initial_transit_mask=None, initial_detrend_period=None,
+                 star_info=None, aperture_file=None):
         """
         @param input_file: the file to be used for loading the light curve
         @param initial_mask: an array of time ranges provided to mask them into the initial object light curve.
@@ -15,7 +15,7 @@ class InputObjectInfo(ObjectInfo):
         @param star_info: input star information
         @param aperture_file: the file containing 1s and 0s specifying the user selected aperture
         """
-        super().__init__(initial_mask, initial_detrend_period, star_info, aperture_file)
+        super().__init__(initial_mask, initial_transit_mask, initial_detrend_period, star_info, aperture_file)
         self.input_file = input_file
 
     def sherlock_id(self):

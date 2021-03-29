@@ -1,5 +1,4 @@
 import logging
-import os
 import numpy as np
 import astropy.io.fits as astropy_fits
 import re

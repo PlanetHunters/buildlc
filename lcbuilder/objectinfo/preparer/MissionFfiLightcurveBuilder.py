@@ -28,10 +28,10 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
     def build(self, object_info, sherlock_dir):
         mission_id = object_info.mission_id()
         sherlock_id = object_info.sherlock_id()
-        quarters = None
-        sectors = None
         logging.info("Retrieving star catalog info...")
         mission, mission_prefix, id = super().parse_object_id(mission_id)
+        cadence = object_info.cadence if object_info.cadence is not None else "short"
+        author = object_info.author if object_info.author is not None else self.authors[mission]
         transits_min_count = 1
         star_info = None
         quarters = None
@@ -41,8 +41,8 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         quarters = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         campaigns = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         if mission_prefix == self.MISSION_ID_KEPLER or mission_prefix == self.MISSION_ID_KEPLER_2:
-            lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence="long",
-                                           author=self.authors[mission], sector=sectors, quarter=quarters,
+            lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence=cadence,
+                                           author=author, sector=sectors, quarter=quarters,
                                            campaign=campaigns)
             lcf = lcf_search_results.download_all()
             lc_data = self.extract_lc_data(lcf)

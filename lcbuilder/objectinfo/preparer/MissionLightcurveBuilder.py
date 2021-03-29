@@ -1,9 +1,6 @@
 import logging
-import os
-
 import numpy as np
-import pandas
-
+from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
 from lcbuilder.star import starinfo
 from lcbuilder.objectinfo.ObjectProcessingError import ObjectProcessingError
 from lcbuilder.objectinfo.preparer.LightcurveBuilder import LightcurveBuilder
@@ -15,24 +12,24 @@ class MissionLightcurveBuilder(LightcurveBuilder):
     def __init__(self):
         super().__init__()
 
-    def build(self, object_info, sherlock_dir):
+    def build(self, object_info: MissionObjectInfo, sherlock_dir):
         mission_id = object_info.mission_id()
         sherlock_id = object_info.sherlock_id()
-        quarters = None
-        sectors = None
         logging.info("Retrieving star catalog info...")
         mission, mission_prefix, id = super().parse_object_id(mission_id)
         if mission_prefix not in self.star_catalogs:
             raise ValueError("Wrong object id " + mission_id)
+        cadence = object_info.cadence if object_info.cadence is not None else "short"
+        author = object_info.author if object_info.author is not None else self.authors[mission]
         star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
         logging.info("Downloading lightcurve files...")
         sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         campaigns = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         if object_info.aperture_file is None:
-            lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence="short",
+            lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
-                                           campaign=campaigns, author=self.authors[mission])
+                                           campaign=campaigns, author=author)
             lcf = lcf_search_results.download_all()
             lc_data = self.extract_lc_data(lcf)
             if lcf is None:
@@ -64,9 +61,9 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             return lc, lc_data, star_info, transits_min_count, np.unique(sectors), np.unique(quarters)
         else:
             logging.info("Using user apertures!")
-            tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence="short",
+            tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                              sector=sectors, quarter=quarters, campaign=campaigns,
-                                             author=self.authors[mission])
+                                             author=author)
             tpfs = tpf_search_results.download_all()
             apertures = {}
             if isinstance(object_info.aperture_file, str):
