@@ -5,7 +5,7 @@ class MissionObjectInfo(ObjectInfo):
     """
     Implementation of ObjectInfo to be used to characterize short-cadence objects from TESS, Kepler and K2 missions.
     """
-    def __init__(self, mission_id: str, sectors, cadence=None, author=None, initial_mask=None,
+    def __init__(self, mission_id: str, sectors, author=None, cadence=None, initial_mask=None,
                  initial_transit_mask=None, initial_detrend_period=None, star_info=None, aperture_file=None):
         """
         @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
