@@ -53,6 +53,9 @@ class LcBuilder:
             raise ValueError(
                 "Invalid target definition with mission=%s, id=%s, coords=%s, sectors=%s, file=%s, cadence=%s")
 
+    def parse_object_info(self, target: str):
+        return MissionLightcurveBuilder().parse_object_id(target)
+
     def parse_coords(self, target: str):
         coords_parsed = re.search(self.COORDS_REGEX, target)
         coords = [coords_parsed.group(1), coords_parsed.group(2)] if coords_parsed is not None else None

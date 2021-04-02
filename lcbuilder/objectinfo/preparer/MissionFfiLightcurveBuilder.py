@@ -30,7 +30,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         sherlock_id = object_info.sherlock_id()
         logging.info("Retrieving star catalog info...")
         mission, mission_prefix, id = super().parse_object_id(mission_id)
-        cadence = object_info.cadence if object_info.cadence is not None else "short"
+        cadence = object_info.cadence if object_info.cadence is not None else "long"
         author = object_info.author if object_info.author is not None else self.authors[mission]
         transits_min_count = 1
         star_info = None
