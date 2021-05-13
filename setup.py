@@ -27,6 +27,6 @@ setuptools.setup(
                         "lightkurve==2.0.2",
                         "photutils==1.0.2",
                         "tess-point==0.6.1",
-                        "transitleastsquares==1.0.26"
+                        "foldedleastsquares==1.0.25"
     ]
 )
