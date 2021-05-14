@@ -1,6 +1,6 @@
 from lcbuilder.star.StarCatalog import StarCatalog
 from astroquery.vizier import Vizier
-import transitleastsquares as tls
+import foldedleastsquares as tls
 
 
 class KicStarCatalog(StarCatalog):

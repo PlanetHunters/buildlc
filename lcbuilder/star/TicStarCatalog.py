@@ -1,7 +1,7 @@
 import numpy as np
 from lcbuilder.star.StarCatalog import StarCatalog
 from astroquery.mast import Catalogs
-import transitleastsquares as tls
+import foldedleastsquares as tls
 
 
 class TicStarCatalog(StarCatalog):
