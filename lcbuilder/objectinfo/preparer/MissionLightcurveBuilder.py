@@ -24,8 +24,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
         logging.info("Downloading lightcurve files...")
         sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
-        quarters = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
-        campaigns = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
+        campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
+        quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         if object_info.aperture_file is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,

@@ -34,12 +34,11 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         author = object_info.author if object_info.author is not None else self.authors[mission]
         transits_min_count = 1
         star_info = None
-        quarters = None
         if mission_prefix not in self.star_catalogs:
             raise ValueError("Wrong object id " + mission_id)
         sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
-        quarters = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
-        campaigns = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
+        campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
+        quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         if mission_prefix == self.MISSION_ID_KEPLER or mission_prefix == self.MISSION_ID_KEPLER_2:
             lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence=cadence,
                                            author=author, sector=sectors, quarter=quarters,
