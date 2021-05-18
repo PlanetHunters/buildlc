@@ -161,7 +161,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 logging.info("Correcting K2 motion in light curve...")
                 quarters = [lcfile.campaign for lcfile in tpfs]
             lc_data = None
-            return lc, lc_data, star_info, transits_min_count, np.unique(sectors), np.unique(quarters)
+            return lc, lc_data, star_info, transits_min_count, None if sectors is None else np.unique(sectors), \
+                   None if quarters is None else np.unique(quarters)
 
     def __calculate_transits_min_count(self, len_data):
         return 1 if len_data == 1 else 2
