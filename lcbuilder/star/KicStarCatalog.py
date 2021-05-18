@@ -18,16 +18,16 @@ class KicStarCatalog(StarCatalog):
                 .query_constraints(KIC=id, catalog=catalog)[0]
                 .as_array()
         )
-        Teff = result[0][0]
-        logg = result[0][1]
-        radius = result[0][2]
-        radius_max = result[0][3]
-        radius_min = result[0][4]
-        mass = result[0][5]
-        mass_max = result[0][6]
-        mass_min = result[0][7]
-        ra = result[0][8]
-        dec = result[0][9]
+        Teff = result[0]["Teff"]
+        logg = result[0]["log_g_"]
+        radius = result[0]["Rad"]
+        radius_max = result[0]["E_Rad"]
+        radius_min = result[0]["e_Rad"]
+        mass = result[0]["Mass"]
+        mass_max = result[0]["E_Mass"]
+        mass_min = result[0]["e_Mass"]
+        ra = result[0]["_RA"]
+        dec = result[0]["_DE"]
         lum = self.star_luminosity(Teff, radius)
         ld, mass, mass_min, mass_max, radius, radius_min, radius_max = tls.catalog_info(KIC_ID=id)
         columns = ["Jmag", "Kmag", "Hmag", "kepmag", "[Fe/H]"]
