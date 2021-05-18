@@ -58,7 +58,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 logging.info("Correcting K2 motion in light curve...")
                 quarters = [lcfile.campaign for lcfile in lcf]
                 lc = lc.to_corrector("sff").correct(windows=20)
-            return lc, lc_data, star_info, transits_min_count, np.unique(sectors), np.unique(quarters)
+            return lc, lc_data, star_info, transits_min_count, None if sectors is None else np.unique(sectors), \
+                   None if quarters is None else np.unique(quarters)
         else:
             logging.info("Using user apertures!")
             tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
