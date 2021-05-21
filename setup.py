@@ -24,7 +24,7 @@ setuptools.setup(
                         'numpy==1.19; python_version<"3.7"',
                         "astropy==4.1",
                         "pandas==1.1.5",
-                        "lightkurve==2.0.2",
+                        "lightkurve==2.0.9",
                         "photutils==1.0.2",
                         "tess-point==0.6.1",
                         "foldedleastsquares==1.0.27"
