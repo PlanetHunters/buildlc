@@ -27,7 +27,7 @@ class LcBuilder:
         return self.lightcurve_builders[type(object_info)].build(object_info, object_dir)
 
     def build_object_info(self, target_name, author, sectors, file, cadence, initial_mask, initial_transit_mask,
-                          initial_detrend_period, star_info, aperture):
+                          initial_detrend_period, star_info, aperture, eleanor_corr_flux='pca_flux'):
         mission = None
         coords = None
         try:
@@ -40,13 +40,14 @@ class LcBuilder:
                               initial_detrend_period, star_info, aperture)
         elif mission is not None and file is None and cadence > 300:
             return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
-                                   initial_detrend_period, star_info, aperture)
+                                   initial_detrend_period, star_info, aperture, eleanor_corr_flux)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask, initial_detrend_period,
                                    star_info, aperture)
         elif mission is None and coords is not None and cadence > 300:
             return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
-                                       initial_transit_mask, initial_detrend_period, star_info, aperture)
+                                       initial_transit_mask, initial_detrend_period, star_info, aperture,
+                                              eleanor_corr_flux)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, initial_detrend_period, star_info, aperture)
         else:
