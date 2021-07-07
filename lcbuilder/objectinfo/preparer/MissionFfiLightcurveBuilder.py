@@ -76,7 +76,8 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 data.append(datum)
             quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
             lc_data = self.extract_eleanor_lc_data(data)
-            lc = data[0].to_lightkurve(data[0].pca_flux, quality_mask=quality_bitmask).remove_nans().flatten()
+            lc = data[0].to_lightkurve(data[0].__dict__[object_info.eleanor_corr_flux],
+                                       quality_mask=quality_bitmask).remove_nans().flatten()
             sectors = [datum.source_info.sector for datum in data]
             if len(data) > 1:
                 for datum in data[1:]:
