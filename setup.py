@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-version = "0.3.6"
+version = "0.3.7"
 setuptools.setup(
     name="lcbuilder", # Replace with your own username
     version=version,
@@ -19,7 +19,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6.9',
+    python_requires='>=3.6',
     install_requires=['numpy==1.20.1; python_version>="3.7"',
                         'numpy==1.19; python_version<"3.7"',
                         "astropy==4.1",
