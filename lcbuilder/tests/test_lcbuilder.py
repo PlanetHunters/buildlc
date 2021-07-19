@@ -1,3 +1,4 @@
+import logging
 import os
 import unittest
 from lcbuilder.lcbuilder_class import LcBuilder
@@ -9,6 +10,39 @@ from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
 
 
 class TestsLcBuilder(unittest.TestCase):
+    def test_build_object_info(self):
+        file = None
+        cadence = 120
+        sectors = "all"
+        lcbuilder = LcBuilder()
+        target_name = "TIC 1234"
+        object_info = lcbuilder.build_object_info(target_name, None, sectors, file, cadence, None, None, None, None, None)
+        assert object_info.mission_id() == target_name
+        target_name = "KIC 1234"
+        object_info = lcbuilder.build_object_info(target_name, None, sectors, file, cadence, None, None, None, None, None)
+        assert object_info.mission_id() == target_name
+        target_name = "EPIC 1234"
+        object_info = lcbuilder.build_object_info(target_name, None, sectors, file, cadence, None, None, None, None, None)
+        assert object_info.mission_id() == target_name
+        target_name = "25.9_-19.3"
+        cadence = 1800
+        object_info = lcbuilder.build_object_info(target_name, None, sectors, file, cadence, None, None, None, None, None)
+        assert object_info.mission_id() is None and object_info.sherlock_id() == "25.9_-19.3_FFI_all"
+        target_name = "25.9_-19.3"
+        cadence = 120
+        try:
+            lcbuilder.build_object_info(target_name, None, sectors, file, cadence, None, None, None, None,
+                                                  None)
+            assert False
+        except ValueError as e:
+            logging.info("Expected exception")
+            # Expected exception
+        target_name = "WHATEVER"
+        file = "fake_lc.csv"
+        object_info = lcbuilder.build_object_info(target_name, None, sectors, file, cadence, None, None, None, None, None)
+        assert object_info.mission_id() is None and object_info.sherlock_id() == "INP_" + os.path.splitext(file)[0].replace("/", "_")
+
+
     def test_short_cadence(self):
         lc, lc_data, star_info, transits_min_count, sectors, quarters = \
             LcBuilder().build(MissionObjectInfo("TIC 352315023", 'all'), "./")

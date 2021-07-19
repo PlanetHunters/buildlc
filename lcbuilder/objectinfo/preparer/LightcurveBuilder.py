@@ -34,6 +34,8 @@ class LightcurveBuilder(ABC):
         if object_id is None:
             return "TESS", self.MISSION_ID_TESS, None
         object_id_parsed = re.search(self.OBJECT_ID_REGEX, object_id)
+        if object_id_parsed is None:
+            return None, None, None
         mission_prefix = object_id[object_id_parsed.regs[1][0]:object_id_parsed.regs[1][1]]
         id = object_id[object_id_parsed.regs[2][0]:object_id_parsed.regs[2][1]]
         if mission_prefix == self.MISSION_ID_KEPLER:
@@ -43,7 +45,7 @@ class LightcurveBuilder(ABC):
         elif mission_prefix == self.MISSION_ID_TESS:
             mission = "TESS"
         else:
-            raise ValueError("Invalid object id " + object_id)
+            mission = None
         return mission, mission_prefix, int(id)
 
     def extract_lc_data(selfself, lcf):

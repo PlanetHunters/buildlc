@@ -28,12 +28,8 @@ class LcBuilder:
 
     def build_object_info(self, target_name, author, sectors, file, cadence, initial_mask, initial_transit_mask,
                           initial_detrend_period, star_info, aperture, eleanor_corr_flux='pca_flux'):
-        mission = None
-        coords = None
-        try:
-            mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
-        except ValueError:
-            coords = self.parse_coords(target_name)
+        mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
+        coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
         if mission is not None and file is None and cadence <= 300:
             return MissionObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
@@ -52,7 +48,8 @@ class LcBuilder:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, initial_detrend_period, star_info, aperture)
         else:
             raise ValueError(
-                "Invalid target definition with mission=%s, id=%s, coords=%s, sectors=%s, file=%s, cadence=%s")
+                "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
+                "cadence={}".format(target_name, mission, id, coords, sectors, file, cadence))
 
     def parse_object_info(self, target: str):
         return MissionLightcurveBuilder().parse_object_id(target)
