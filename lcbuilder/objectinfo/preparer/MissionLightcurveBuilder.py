@@ -31,9 +31,9 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                                            sector=sectors, quarter=quarters,
                                            campaign=campaigns, author=author)
             lcf = lcf_search_results.download_all()
-            lc_data = self.extract_lc_data(lcf)
             if lcf is None:
                 raise ObjectProcessingError("Light curve not found for object id " + mission_id)
+            lc_data = self.extract_lc_data(lcf)
             lc = None
             matching_objects = []
             for i in range(0, len(lcf.PDCSAP_FLUX)):
