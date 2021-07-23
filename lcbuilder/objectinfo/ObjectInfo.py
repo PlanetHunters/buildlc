@@ -1,4 +1,3 @@
-import re
 from abc import ABC, abstractmethod
 
 
@@ -17,12 +16,25 @@ class ObjectInfo(ABC):
     star_info = None
 
     def __init__(self, initial_mask=None, initial_transit_mask=None, initial_detrend_period=None, star_info=None,
-                 aperture_file=None):
+                 aperture_file=None, outliers_sigma=None, high_rms_enabled=True, high_rms_threshold=2.5,
+                 high_rms_bin_hours=4, smooth_enabled=False,
+                 auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
+                 auto_detrend_period=None, prepare_algorithm=None):
         self.initial_mask = initial_mask
         self.initial_transit_mask = initial_transit_mask
         self.initial_detrend_period = initial_detrend_period
         self.star_info = star_info
         self.aperture_file = aperture_file
+        self.outliers_sigma = outliers_sigma
+        self.high_rms_enabled = high_rms_enabled
+        self.high_rms_threshold = high_rms_threshold
+        self.high_rms_bin_hours = high_rms_bin_hours
+        self.smooth_enabled = smooth_enabled
+        self.auto_detrend_enabled = auto_detrend_enabled
+        self.auto_detrend_method = auto_detrend_method
+        self.auto_detrend_ratio = auto_detrend_ratio
+        self.auto_detrend_period = auto_detrend_period
+        self.prepare_algorithm = prepare_algorithm
 
     @abstractmethod
     def sherlock_id(self):
