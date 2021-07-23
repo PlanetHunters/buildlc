@@ -354,25 +354,42 @@ class LcBuilder:
         return med
 
     def build_object_info(self, target_name, author, sectors, file, cadence, initial_mask, initial_transit_mask,
-                          initial_detrend_period, star_info, aperture, eleanor_corr_flux='pca_flux'):
+                          initial_detrend_period, star_info, aperture, eleanor_corr_flux='pca_flux',
+                          outliers_sigma=None, high_rms_enabled=True, high_rms_threshold=2.5,
+                          high_rms_bin_hours=4, smooth_enabled=False,
+                          auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
+                          auto_detrend_period=None, prepare_algorithm=None):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
         if mission is not None and file is None and cadence <= 300:
             return MissionObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
-                              initial_detrend_period, star_info, aperture)
+                                     initial_detrend_period, star_info, aperture, outliers_sigma, high_rms_enabled,
+                                     high_rms_threshold, high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
+                                     auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm)
         elif mission is not None and file is None and cadence > 300:
             return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
-                                   initial_detrend_period, star_info, aperture, eleanor_corr_flux)
+                                          initial_detrend_period, star_info, aperture, eleanor_corr_flux,
+                                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
+                                          smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
+                                          auto_detrend_period, prepare_algorithm)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask, initial_detrend_period,
-                                   star_info, aperture)
+                                          star_info, aperture, outliers_sigma, high_rms_enabled, high_rms_threshold,
+                                          high_rms_bin_hours, smooth_enabled, auto_detrend_enabled, auto_detrend_method,
+                                          auto_detrend_ratio, auto_detrend_period, prepare_algorithm)
         elif mission is None and coords is not None and cadence > 300:
             return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
-                                       initial_transit_mask, initial_detrend_period, star_info, aperture,
-                                              eleanor_corr_flux)
+                                              initial_transit_mask, initial_detrend_period, star_info, aperture,
+                                              eleanor_corr_flux, outliers_sigma, high_rms_enabled, high_rms_threshold,
+                                              high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
+                                              auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
+                                              prepare_algorithm)
         elif mission is None and file is not None:
-            return InputObjectInfo(file, initial_mask, initial_transit_mask, initial_detrend_period, star_info, aperture)
+            return InputObjectInfo(file, initial_mask, initial_transit_mask, initial_detrend_period, star_info,
+                                   aperture, outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
+                                   smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
+                                   auto_detrend_period, prepare_algorithm)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
