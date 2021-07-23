@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-version = "0.4.0-RC1"
+version = "0.3.9"
 setuptools.setup(
     name="lcbuilder", # Replace with your own username
     version=version,
@@ -28,6 +28,6 @@ setuptools.setup(
                         "photutils==1.0.2",
                         "tess-point==0.6.1",
                         "foldedleastsquares==1.0.27",
-                        "wotan"
+                        "wotan==1.9"
     ]
 )
