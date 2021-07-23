@@ -256,7 +256,8 @@ class LcBuilder:
         clean_flux_err = flux_err
         is_short_cadence = round(cadence) <= 5
         if object_info.prepare_algorithm is not None:
-            clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time, clean_flux, clean_flux_err)
+            clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
+                                                                                           clean_flux, clean_flux_err)
         if (is_short_cadence and object_info.smooth_enabled) or (object_info.high_rms_enabled and object_info.initial_mask is None):
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
