@@ -27,6 +27,7 @@ setuptools.setup(
                         "lightkurve==2.0.9",
                         "photutils==1.0.2",
                         "tess-point==0.6.1",
-                        "foldedleastsquares==1.0.27"
+                        "foldedleastsquares==1.0.27",
+                        "wotan"
     ]
 )
