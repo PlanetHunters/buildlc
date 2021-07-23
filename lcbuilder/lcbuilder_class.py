@@ -76,8 +76,8 @@ class LcBuilder:
         # plt.savefig(object_dir + "PeriodogramNorm_" + str(sherlock_id) + ".png", bbox_inches='tight')
         # plt.clf()
         detrend_period = None
-        if object_info.initial_detrend_period is not None:
-            detrend_period = object_info.initial_detrend_period
+        if object_info.auto_detrend_period is not None:
+            detrend_period = object_info.auto_detrend_period
         elif object_info.auto_detrend_enabled:
             detrend_period = self.__calculate_max_significant_period(lc, periodogram)
         if detrend_period is not None:
@@ -355,7 +355,7 @@ class LcBuilder:
         return med
 
     def build_object_info(self, target_name, author, sectors, file, cadence, initial_mask, initial_transit_mask,
-                          initial_detrend_period, star_info, aperture, eleanor_corr_flux='pca_flux',
+                          star_info, aperture, eleanor_corr_flux='pca_flux',
                           outliers_sigma=None, high_rms_enabled=True, high_rms_threshold=2.5,
                           high_rms_bin_hours=4, smooth_enabled=False,
                           auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
@@ -365,29 +365,29 @@ class LcBuilder:
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
         if mission is not None and file is None and cadence <= 300:
             return MissionObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
-                                     initial_detrend_period, star_info, aperture, outliers_sigma, high_rms_enabled,
+                                     star_info, aperture, outliers_sigma, high_rms_enabled,
                                      high_rms_threshold, high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
                                      auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm)
         elif mission is not None and file is None and cadence > 300:
             return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
-                                          initial_detrend_period, star_info, aperture, eleanor_corr_flux,
+                                          star_info, aperture, eleanor_corr_flux,
                                           outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
                                           smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
                                           auto_detrend_period, prepare_algorithm)
         elif mission is not None and file is not None:
-            return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask, initial_detrend_period,
+            return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, aperture, outliers_sigma, high_rms_enabled, high_rms_threshold,
                                           high_rms_bin_hours, smooth_enabled, auto_detrend_enabled, auto_detrend_method,
                                           auto_detrend_ratio, auto_detrend_period, prepare_algorithm)
         elif mission is None and coords is not None and cadence > 300:
             return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
-                                              initial_transit_mask, initial_detrend_period, star_info, aperture,
+                                              initial_transit_mask, star_info, aperture,
                                               eleanor_corr_flux, outliers_sigma, high_rms_enabled, high_rms_threshold,
                                               high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
                                               auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
                                               prepare_algorithm)
         elif mission is None and file is not None:
-            return InputObjectInfo(file, initial_mask, initial_transit_mask, initial_detrend_period, star_info,
+            return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    aperture, outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
                                    smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
                                    auto_detrend_period, prepare_algorithm)

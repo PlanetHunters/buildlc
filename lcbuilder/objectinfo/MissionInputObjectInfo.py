@@ -7,7 +7,7 @@ class MissionInputObjectInfo(ObjectInfo):
     the source mission id of the input light curve.
     """
     def __init__(self, mission_id, input_file, initial_mask=None, initial_transit_mask=None,
-                 initial_detrend_period=None, star_info=None, aperture_file=None, outliers_sigma=None,
+                 star_info=None, aperture_file=None, outliers_sigma=None,
                  high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
@@ -17,7 +17,6 @@ class MissionInputObjectInfo(ObjectInfo):
         @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
         @param input_file: the file to be used for loading the light curve
         @param initial_mask: an array of time ranges provided to mask them into the initial object light curve.
-        @param initial_detrend_period: integer value specifying a fixed value for an initial period to be detrended
         @param aperture_file: the file containing 1s and 0s specifying the user selected aperture
         from the initial light curve before processing.
         @param star_info: input star information
@@ -32,7 +31,7 @@ class MissionInputObjectInfo(ObjectInfo):
         @param auto_detrend_period: the fixed detrend period (disables auto_detrend)
         @param prepare_algorithm: custom curve preparation logic
         """
-        super().__init__(initial_mask, initial_transit_mask, initial_detrend_period, star_info, aperture_file,
+        super().__init__(initial_mask, initial_transit_mask, star_info, aperture_file,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
                          auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
                          prepare_algorithm)
