@@ -31,6 +31,7 @@ class Flattener:
         bin_centers_i = bin_edges_i[1:] - bin_width_i / 2
         return bin_centers_i, bin_means_i, bin_width_i, bin_edges_i, bin_stds_i
 
+
 class FlattenInput:
     def __init__(self, time, flux, wl, bin_minutes):
         self.time = time
