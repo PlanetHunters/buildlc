@@ -105,7 +105,7 @@ class LcBuilder:
                         (clean_time > mask_range[1] if not math.isnan(mask_range[1]) else False)]
                 clean_time = clean_time[mask]
                 flatten_flux = flatten_flux[mask]
-                clean_flux_err = clean_flux_err[~mask]
+                clean_flux_err = clean_flux_err[mask]
         if object_info.initial_transit_mask is not None:
             logging.info('================================================')
             logging.info('INITIAL TRANSIT MASKING')
