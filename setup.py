@@ -28,7 +28,7 @@ setuptools.setup(
                         "photutils==1.0.2",
                         "scipy==1.5.4",
                         "tess-point==0.6.1",
-                        "foldedleastsquares==1.0.27",
+                        "foldedleastsquares==1.0.28",
                         "wotan==1.9"
     ]
 )
