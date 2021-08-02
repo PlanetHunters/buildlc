@@ -100,7 +100,7 @@ class LcBuilder:
             initial_mask = object_info.initial_mask
             logging.info('** Applying ordered masks to the lightcurve **')
             for mask_range in initial_mask:
-                logging.info('* Initial mask since day %.0f to day %.0f. *', mask_range[0], mask_range[1])
+                logging.info('* Initial mask since day %.2f to day %.2f. *', mask_range[0], mask_range[1])
                 mask = [(clean_time < mask_range[0] if not math.isnan(mask_range[1]) else False) |
                         (clean_time > mask_range[1] if not math.isnan(mask_range[1]) else False)]
                 clean_time = clean_time[mask]
