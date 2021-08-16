@@ -37,7 +37,7 @@ class LcBuilder:
                                     MissionFfiCoordsObjectInfo: MissionFfiLightcurveBuilder()}
 
     def build(self, object_info: ObjectInfo, object_dir: str):
-        lc, lc_data, star_info, transits_min_count, sectors, quarters =\
+        lc, lc_data, star_info, transits_min_count, sectors, quarters, apertures =\
             self.lightcurve_builders[type(object_info)].build(object_info, object_dir)
         sherlock_id = object_info.sherlock_id()
         star_info = self.__complete_star_info(object_info.mission_id(), object_info.star_info, star_info, object_dir)
@@ -121,7 +121,7 @@ class LcBuilder:
                 clean_flux_err = clean_flux_err[~mask]
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
         return lc, lc_data, star_info, transits_min_count, cadence, detrend_period, \
-               sectors if sectors is not None else quarters
+               sectors if sectors is not None else quarters, apertures
 
     def smooth(self, flux, window_len=11, window='blackman'):
         clean_flux = savgol_filter(flux, window_len, 3)

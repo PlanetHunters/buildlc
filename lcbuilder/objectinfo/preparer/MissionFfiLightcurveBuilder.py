@@ -39,11 +39,15 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
         campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
+        apertures = {}
         if mission_prefix == self.MISSION_ID_KEPLER or mission_prefix == self.MISSION_ID_KEPLER_2:
             lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence=cadence,
                                            author=author, sector=sectors, quarter=quarters,
                                            campaign=campaigns)
             lcf = lcf_search_results.download_all()
+            tpfs = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
+                                           sector=sectors, quarter=quarters,
+                                           campaign=campaigns, author=author).download_all()
             lc_data = self.extract_lc_data(lcf)
             lc = lcf.PDCSAP_FLUX.stitch().remove_nans()
             transits_min_count = 1 if len(lcf) == 0 else 2
@@ -53,6 +57,12 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 logging.info("Correcting K2 motion in light curve...")
                 quarters = [lcfile.campaign for lcfile in lcf]
                 lc = SFFCorrector(lc).correct(windows=20)
+            for tpf in tpfs:
+                if mission_prefix == self.MISSION_ID_KEPLER:
+                    sector = tpf.quarter
+                elif mission_prefix == self.MISSION_ID_KEPLER_2:
+                    sector = tpf.campaign
+                apertures[sector] = tpf.pipeline_mask
             star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
         else:
             if isinstance(object_info, MissionFfiCoordsObjectInfo):
@@ -72,8 +82,9 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 star_info = starinfo.StarInfo(object_info.sherlock_id(), *self.star_catalog.catalog_info(int(star[0].tic)))
             data = []
             for s in star:
-                datum = TargetData(s, height=15, width=15, bkg_size=31, do_pca=True)
+                datum = TargetData(s, height=11, width=11, do_pca=True)
                 data.append(datum)
+                apertures[s.sector] = datum.aperture.astype(bool)
             quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
             lc_data = self.extract_eleanor_lc_data(data)
             lc = data[0].to_lightkurve(data[0].__dict__[object_info.eleanor_corr_flux],
@@ -84,7 +95,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                     quality_bitmask = np.bitwise_and(datum.quality, 175)
                     lc = lc.append(datum.to_lightkurve(datum.pca_flux, quality_mask=quality_bitmask).remove_nans().flatten())
                 transits_min_count = 2
-        return lc, lc_data, star_info, transits_min_count, sectors, quarters
+        return lc, lc_data, star_info, transits_min_count, sectors, quarters, apertures
 
     def extract_eleanor_lc_data(selfself, eleanor_data):
         time = []

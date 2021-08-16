@@ -26,16 +26,28 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
         campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
+        apertures = {}
         if object_info.aperture_file is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
                                            campaign=campaigns, author=author)
             lcf = lcf_search_results.download_all()
+            tpfs = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
+                                           sector=sectors, quarter=quarters,
+                                           campaign=campaigns, author=author).download_all()
             if lcf is None:
                 raise ObjectProcessingError("Light curve not found for object id " + mission_id)
             lc_data = self.extract_lc_data(lcf)
             lc = None
             matching_objects = []
+            for tpf in tpfs:
+                if mission_prefix == self.MISSION_ID_KEPLER:
+                    sector = tpf.quarter
+                elif mission_prefix == self.MISSION_ID_TESS:
+                    sector = tpf.sector
+                if mission_prefix == self.MISSION_ID_KEPLER_2:
+                    sector = tpf.campaign
+                apertures[sector] = tpf.pipeline_mask
             for i in range(0, len(lcf.PDCSAP_FLUX)):
                 if lcf.PDCSAP_FLUX[i].label == mission_id:
                     if lc is None:
@@ -50,16 +62,16 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 logging.warning("================================================")
             lc = lc.remove_nans()
             transits_min_count = self.__calculate_transits_min_count(len(lcf))
-            if mission_prefix == self.MISSION_ID_KEPLER or mission_id == self.MISSION_ID_KEPLER_2:
+            if mission_prefix == self.MISSION_ID_KEPLER:
                 quarters = [lcfile.quarter for lcfile in lcf]
             elif mission_prefix == self.MISSION_ID_TESS:
                 sectors = [file.sector for file in lcf]
-            if mission_prefix == self.MISSION_ID_KEPLER_2:
+            elif mission_prefix == self.MISSION_ID_KEPLER_2:
                 logging.info("Correcting K2 motion in light curve...")
                 quarters = [lcfile.campaign for lcfile in lcf]
                 lc = lc.to_corrector("sff").correct(windows=20)
             return lc, lc_data, star_info, transits_min_count, None if sectors is None else np.unique(sectors), \
-                   None if quarters is None else np.unique(quarters)
+                   None if quarters is None else np.unique(quarters), apertures
         else:
             logging.info("Using user apertures!")
             tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
@@ -163,7 +175,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 quarters = [lcfile.campaign for lcfile in tpfs]
             lc_data = None
             return lc, lc_data, star_info, transits_min_count, None if sectors is None else np.unique(sectors), \
-                   None if quarters is None else np.unique(quarters)
+                   None if quarters is None else np.unique(quarters), apertures
 
     def __calculate_transits_min_count(self, len_data):
         return 1 if len_data == 1 else 2
