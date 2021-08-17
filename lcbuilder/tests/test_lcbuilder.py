@@ -44,49 +44,42 @@ class TestsLcBuilder(unittest.TestCase):
 
 
     def test_short_cadence(self):
-        lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, apertures = \
-            LcBuilder().build(MissionObjectInfo("TIC 352315023", 'all'), "./")
-        self.assertGreater(len(lc), 0)
-        self.__test_tess_star_params(star_info)
+        lc_build = LcBuilder().build(MissionObjectInfo("TIC 352315023", 'all'), "./")
+        self.assertGreater(len(lc_build.lc), 0)
+        self.__test_tess_star_params(lc_build.star_info)
 
     def test_short_cadence_kic(self):
-        lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, apertures = \
-            LcBuilder().build(MissionObjectInfo("KIC 12557548", 'all'), "./")
-        self.assertGreater(len(lc), 0)
-        self.__test_kepler_star_params(star_info)
+        lc_build = LcBuilder().build(MissionObjectInfo("KIC 12557548", 'all'), "./")
+        self.assertGreater(len(lc_build.lc), 0)
+        self.__test_kepler_star_params(lc_build.star_info)
 
     def test_short_cadence_epic(self):
-        lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, apertures = \
-            LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
-        self.assertGreater(len(lc), 0)
-        self.__test_k2_star_params(star_info)
+        lc_build = LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
+        self.assertGreater(len(lc_build.lc), 0)
+        self.__test_k2_star_params(lc_build.star_info)
 
     def test_long_cadence(self):
-        lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, apertures = \
-            LcBuilder().build(MissionFfiIdObjectInfo("TIC 352315023", 'all'), "./")
-        self.assertGreater(len(lc), 0)
-        self.__test_tess_star_params(star_info)
+        lc_build = LcBuilder().build(MissionFfiIdObjectInfo("TIC 352315023", 'all'), "./")
+        self.assertGreater(len(lc_build.lc), 0)
+        self.__test_tess_star_params(lc_build.star_info)
 
     def test_long_cadence_coords(self):
-        lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, apertures =\
-            LcBuilder().build(MissionFfiCoordsObjectInfo(300.47, -71.96, 'all'), "./")
-        self.assertGreater(len(lc), 0)
-        self.__test_tess_star_params(star_info)
+        lc_build = LcBuilder().build(MissionFfiCoordsObjectInfo(300.47, -71.96, 'all'), "./")
+        self.assertGreater(len(lc_build.lc), 0)
+        self.__test_tess_star_params(lc_build.star_info)
 
     def test_input_with_id(self):
         directory = os.path.dirname(__file__) + "/input.csv"
-        lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, apertures = \
-            LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
-        self.assertGreater(len(lc), 0)
-        self.__test_tess_star_params(star_info)
+        lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
+        self.assertGreater(len(lc_build.lc), 0)
+        self.__test_tess_star_params(lc_build.star_info)
 
     def test_input_without_id(self):
         directory = os.path.dirname(__file__) + "/input.csv"
-        lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, apertures = \
-            LcBuilder().build(InputObjectInfo(directory), "./")
-        self.assertGreater(len(lc), 0)
-        self.assertTrue(star_info.mass_assumed)
-        self.assertTrue(star_info.radius_assumed)
+        lc_build = LcBuilder().build(InputObjectInfo(directory), "./")
+        self.assertGreater(len(lc_build.lc), 0)
+        self.assertTrue(lc_build.star_info.mass_assumed)
+        self.assertTrue(lc_build.star_info.radius_assumed)
 
     def __test_tess_star_params(self, star_info):
         self.assertAlmostEqual(star_info.mass, 0.47, 1)

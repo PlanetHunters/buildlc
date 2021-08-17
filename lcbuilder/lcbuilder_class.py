@@ -37,13 +37,12 @@ class LcBuilder:
                                     MissionFfiCoordsObjectInfo: MissionFfiLightcurveBuilder()}
 
     def build(self, object_info: ObjectInfo, object_dir: str):
-        lc, lc_data, star_info, transits_min_count, sectors, quarters, apertures =\
-            self.lightcurve_builders[type(object_info)].build(object_info, object_dir)
+        lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir)
         sherlock_id = object_info.sherlock_id()
-        star_info = self.__complete_star_info(object_info.mission_id(), object_info.star_info, star_info, object_dir)
-        time_float = lc.time.value
-        flux_float = lc.flux.value
-        flux_err_float = lc.flux_err.value
+        star_info = self.__complete_star_info(object_info.mission_id(), object_info.star_info, lc_build.star_info, object_dir)
+        time_float = lc_build.lc.time.value
+        flux_float = lc_build.lc.flux.value
+        flux_err_float = lc_build.lc.flux_err.value
         lc = lightkurve.LightCurve(time=time_float, flux=flux_float, flux_err=flux_err_float)
         lc_df = pandas.DataFrame(columns=['#time', 'flux', 'flux_err'])
         lc_df['#time'] = time_float
@@ -75,24 +74,22 @@ class LcBuilder:
         # plt.title(str(sherlock_id) + " Lightcurve normalized periodogram")
         # plt.savefig(object_dir + "PeriodogramNorm_" + str(sherlock_id) + ".png", bbox_inches='tight')
         # plt.clf()
-        detrend_period = None
         if object_info.auto_detrend_period is not None:
-            detrend_period = object_info.auto_detrend_period
+            lc_build.detrend_period = object_info.auto_detrend_period
         elif object_info.auto_detrend_enabled:
-            detrend_period = self.__calculate_max_significant_period(lc, periodogram)
-        if detrend_period is not None:
+            lc_build.detrend_period = self.__calculate_max_significant_period(lc, periodogram)
+        if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
             logging.info('================================================')
-            logging.info("Period = %.3f", detrend_period)
-            lc.fold(detrend_period).scatter()
-            plt.title("Phase-folded period: " + format(detrend_period, ".2f") + " days")
+            logging.info("Period = %.3f", lc_build.detrend_period)
+            lc.fold(lc_build.detrend_period).scatter()
+            plt.title("Phase-folded period: " + format(lc_build.detrend_period, ".2f") + " days")
             plt.savefig(object_dir + "/Phase_detrend_period_" + str(sherlock_id) + "_" +
-                        format(detrend_period, ".2f") + "_days.png", bbox_inches='tight')
+                        format(lc_build.detrend_period, ".2f") + "_days.png", bbox_inches='tight')
             plt.clf()
-            flatten_flux, lc_trend = self.__detrend_by_period(object_info.auto_detrend_method, clean_time,
-                                                              flatten_flux,
-                                                              detrend_period * object_info.auto_detrend_ratio)
+            flatten_flux, lc_trend = self.__detrend_by_period(object_info.auto_detrend_method, clean_time, flatten_flux,
+                                                              lc_build.detrend_period * object_info.auto_detrend_ratio)
         if object_info.initial_mask is not None:
             logging.info('================================================')
             logging.info('INITIAL MASKING')
@@ -120,8 +117,8 @@ class LcBuilder:
                 flatten_flux = flatten_flux[~mask]
                 clean_flux_err = clean_flux_err[~mask]
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
-        return lc, lc_data, star_info, transits_min_count, cadence, detrend_period, \
-               sectors if sectors is not None else quarters, apertures
+        lc_build.lc = lc
+        return lc_build
 
     def smooth(self, flux, window_len=11, window='blackman'):
         clean_flux = savgol_filter(flux, window_len, 3)

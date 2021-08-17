@@ -1,5 +1,7 @@
 import logging
 import numpy as np
+
+from lcbuilder.LcBuild import LcBuild
 from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
 from lcbuilder.star import starinfo
 from lcbuilder.objectinfo.ObjectProcessingError import ObjectProcessingError
@@ -27,6 +29,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         apertures = {}
+        rows = {}
+        columns = {}
         if object_info.aperture_file is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
@@ -48,6 +52,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 if mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
                 apertures[sector] = tpf.pipeline_mask
+                rows[sector] = tpf.row
+                columns[sector] = tpf.column
             for i in range(0, len(lcf.PDCSAP_FLUX)):
                 if lcf.PDCSAP_FLUX[i].label == mission_id:
                     if lc is None:
@@ -63,45 +69,67 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             lc = lc.remove_nans()
             transits_min_count = self.__calculate_transits_min_count(len(lcf))
             if mission_prefix == self.MISSION_ID_KEPLER:
-                quarters = [lcfile.quarter for lcfile in lcf]
+                sectors = [lcfile.quarter for lcfile in lcf]
             elif mission_prefix == self.MISSION_ID_TESS:
                 sectors = [file.sector for file in lcf]
             elif mission_prefix == self.MISSION_ID_KEPLER_2:
                 logging.info("Correcting K2 motion in light curve...")
-                quarters = [lcfile.campaign for lcfile in lcf]
+                sectors = [lcfile.campaign for lcfile in lcf]
                 lc = lc.to_corrector("sff").correct(windows=20)
-            return lc, lc_data, star_info, transits_min_count, None if sectors is None else np.unique(sectors), \
-                   None if quarters is None else np.unique(quarters), apertures
+            source = "tpf"
         else:
             logging.info("Using user apertures!")
             tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                              sector=sectors, quarter=quarters, campaign=campaigns,
                                              author=author)
             tpfs = tpf_search_results.download_all()
-            apertures = {}
+            source = "tpf"
             if isinstance(object_info.aperture_file, str):
                 aperture = []
+                row = None
+                column = None
                 with open(object_info.aperture_file, 'r') as fd:
                     reader = csv.reader(fd)
-                    for row in reader:
-                        aperture.append(row)
+                    i = 0
+                    for line in reader:
+                        if i == 0:
+                            pixel_line = line.split(",")
+                            row = pixel_line[0]
+                            column = pixel_line[1]
+                        else:
+                            aperture.append(line)
+                        i = i + 1
                     aperture = np.array(aperture)
                 for tpf in tpfs:
                     if mission_prefix == self.MISSION_ID_KEPLER:
-                        apertures[tpf.quarter] = aperture
+                        sector = tpf.quarter
                     elif mission_prefix == self.MISSION_ID_TESS:
-                        apertures[tpf.sector] = aperture
+                        sector = tpf.sector
                     elif mission_prefix == self.MISSION_ID_KEPLER_2:
-                        apertures[tpf.campaign] = aperture
+                        sector = tpf.campaign
+                    apertures[sector] = aperture
+                    rows[sector] = row
+                    columns[sector] = column
             else:
                 for sector, aperture_file in object_info.aperture_file.items():
                     aperture = []
-                    with open(aperture_file, 'r') as fd:
+                    row = None
+                    column = None
+                    with open(object_info.aperture_file, 'r') as fd:
                         reader = csv.reader(fd)
-                        for row in reader:
-                            aperture.append(row)
+                        i = 0
+                        for line in reader:
+                            if i == 0:
+                                pixel_line = line.split(",")
+                                row = pixel_line[0]
+                                column = pixel_line[1]
+                            else:
+                                aperture.append(line)
+                            i = i + 1
                     aperture = np.array(aperture)
                     apertures[sector] = aperture
+                    rows[sector] = row
+                    columns[sector] = column
             lc = None
             for tpf in tpfs:
                 if mission_prefix == self.MISSION_ID_KEPLER:
@@ -167,15 +195,16 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             plt.close()
             transits_min_count = self.__calculate_transits_min_count(len(tpfs))
             if mission_prefix == self.MISSION_ID_KEPLER or mission_id == self.MISSION_ID_KEPLER_2:
-                quarters = [lcfile.quarter for lcfile in tpfs]
+                sectors = [lcfile.quarter for lcfile in tpfs]
             elif mission_prefix == self.MISSION_ID_TESS:
                 sectors = [file.sector for file in tpfs]
             if mission_prefix == self.MISSION_ID_KEPLER_2:
                 logging.info("Correcting K2 motion in light curve...")
-                quarters = [lcfile.campaign for lcfile in tpfs]
+                sectors = [lcfile.campaign for lcfile in tpfs]
+            sectors = None if sectors is None else np.unique(sectors)
             lc_data = None
-            return lc, lc_data, star_info, transits_min_count, None if sectors is None else np.unique(sectors), \
-                   None if quarters is None else np.unique(quarters), apertures
+        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures, rows,
+                       columns)
 
     def __calculate_transits_min_count(self, len_data):
         return 1 if len_data == 1 else 2

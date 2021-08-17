@@ -3,6 +3,7 @@ import os
 import sys
 import lcbuilder.eleanor
 from lcbuilder import constants
+from lcbuilder.LcBuild import LcBuild
 
 sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
 import eleanor
@@ -40,7 +41,10 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         apertures = {}
+        rows = {}
+        columns = {}
         if mission_prefix == self.MISSION_ID_KEPLER or mission_prefix == self.MISSION_ID_KEPLER_2:
+            source = "tpf"
             lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence=cadence,
                                            author=author, sector=sectors, quarter=quarters,
                                            campaign=campaigns)
@@ -52,10 +56,10 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             lc = lcf.PDCSAP_FLUX.stitch().remove_nans()
             transits_min_count = 1 if len(lcf) == 0 else 2
             if mission_prefix == self.MISSION_ID_KEPLER:
-                quarters = [lcfile.quarter for lcfile in lcf]
+                sectors = [lcfile.quarter for lcfile in lcf]
             elif mission_prefix == self.MISSION_ID_KEPLER_2:
                 logging.info("Correcting K2 motion in light curve...")
-                quarters = [lcfile.campaign for lcfile in lcf]
+                sectors = [lcfile.campaign for lcfile in lcf]
                 lc = SFFCorrector(lc).correct(windows=20)
             for tpf in tpfs:
                 if mission_prefix == self.MISSION_ID_KEPLER:
@@ -63,8 +67,11 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
                 apertures[sector] = tpf.pipeline_mask
+                rows[sector] = tpf.row
+                columns[sector] = tpf.column
             star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
         else:
+            source = "eleanor"
             if isinstance(object_info, MissionFfiCoordsObjectInfo):
                 coords = SkyCoord(ra=object_info.ra, dec=object_info.dec, unit=(u.deg, u.deg))
                 star = eleanor.source.multi_sectors(coords=coords, sectors=object_info.sectors,
@@ -85,6 +92,8 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 datum = TargetData(s, height=11, width=11, do_pca=True)
                 data.append(datum)
                 apertures[s.sector] = datum.aperture.astype(bool)
+                rows[s.sector] = s.position_on_chip[0]
+                columns[s.sector] = s.position_on_chip[1]
             quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
             lc_data = self.extract_eleanor_lc_data(data)
             lc = data[0].to_lightkurve(data[0].__dict__[object_info.eleanor_corr_flux],
@@ -93,9 +102,11 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if len(data) > 1:
                 for datum in data[1:]:
                     quality_bitmask = np.bitwise_and(datum.quality, 175)
-                    lc = lc.append(datum.to_lightkurve(datum.pca_flux, quality_mask=quality_bitmask).remove_nans().flatten())
+                    lc = lc.append(datum.to_lightkurve(datum.pca_flux, quality_mask=quality_bitmask).remove_nans()
+                                   .flatten())
                 transits_min_count = 2
-        return lc, lc_data, star_info, transits_min_count, sectors, quarters, apertures
+        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures, rows,
+                       columns)
 
     def extract_eleanor_lc_data(selfself, eleanor_data):
         time = []
