@@ -7,7 +7,7 @@ class MissionObjectInfo(ObjectInfo):
     """
     def __init__(self, mission_id: str, sectors, author=None, cadence=None, initial_mask=None,
                  initial_transit_mask=None, star_info=None, aperture_file=None,
-                 outliers_sigma=None, high_rms_enabled=True, high_rms_threshold=2.5,
+                 outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None):
