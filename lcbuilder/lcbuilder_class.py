@@ -53,13 +53,13 @@ class LcBuilder:
         time_float = lc.time.value
         flux_float = lc.flux.value
         flux_err_float = lc.flux_err.value
-        cadence_array = numpy.diff(time_float) * 24 * 60
+        cadence_array = numpy.diff(time_float) * 24 * 60 * 60
         cadence_array = cadence_array[~numpy.isnan(cadence_array)]
         cadence_array = cadence_array[cadence_array > 0]
-        cadence = numpy.nanmedian(cadence_array)
+        lc_build.cadence = int(numpy.round(numpy.nanmedian(cadence_array)))
         clean_time, flatten_flux, clean_flux_err = self.__clean_initial_flux(object_info, time_float, flux_float,
-                                                                             flux_err_float, star_info, cadence,
-                                                                             object_dir)
+                                                                             flux_err_float, star_info,
+                                                                             lc_build.cadence, object_dir)
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
         periodogram = lc.to_periodogram(minimum_period=0.05, maximum_period=15, oversample_factor=10)
         # power_norm = self.running_median(periodogram.power.value, 20)
@@ -252,7 +252,7 @@ class LcBuilder:
         clean_time = time
         clean_flux = flux
         clean_flux_err = flux_err
-        is_short_cadence = round(cadence) <= 5
+        is_short_cadence = cadence <= 300
         if object_info.prepare_algorithm is not None:
             clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
                                                                                            clean_flux, clean_flux_err)
