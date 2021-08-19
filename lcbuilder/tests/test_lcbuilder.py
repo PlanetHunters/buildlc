@@ -45,26 +45,31 @@ class TestsLcBuilder(unittest.TestCase):
 
     def test_short_cadence(self):
         lc_build = LcBuilder().build(MissionObjectInfo("TIC 352315023", 'all'), "./")
+        self.assertEquals(lc_build.cadence, 120)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
 
     def test_short_cadence_kic(self):
         lc_build = LcBuilder().build(MissionObjectInfo("KIC 12557548", 'all'), "./")
+        self.assertEquals(lc_build.cadence, 59)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_kepler_star_params(lc_build.star_info)
 
     def test_short_cadence_epic(self):
         lc_build = LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
+        self.assertEquals(lc_build.cadence, 59)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_k2_star_params(lc_build.star_info)
 
     def test_long_cadence(self):
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("TIC 352315023", 'all'), "./")
+        self.assertEquals(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
 
     def test_long_cadence_coords(self):
         lc_build = LcBuilder().build(MissionFfiCoordsObjectInfo(300.47, -71.96, 'all'), "./")
+        self.assertEquals(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
 

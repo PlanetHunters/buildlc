@@ -38,7 +38,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             lcf = lcf_search_results.download_all()
             tpfs = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
-                                           campaign=campaigns, author=author).download_all()
+                                           campaign=campaigns, author=author).download_all(cutout_size=(13, 13))
             if lcf is None:
                 raise ObjectProcessingError("Light curve not found for object id " + mission_id)
             lc_data = self.extract_lc_data(lcf)
@@ -82,7 +82,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                              sector=sectors, quarter=quarters, campaign=campaigns,
                                              author=author)
-            tpfs = tpf_search_results.download_all()
+            tpfs = tpf_search_results.download_all(cutout_size=(13, 13))
             source = "tpf"
             if isinstance(object_info.aperture_file, str):
                 aperture = []
