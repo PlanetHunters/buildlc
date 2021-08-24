@@ -2,13 +2,15 @@ import logging
 import numpy as np
 
 from lcbuilder.LcBuild import LcBuild
+from lcbuilder.constants import CUTOUT_SIZE
 from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
+from lcbuilder.photometry.aperture_extractor import ApertureExtractor
 from lcbuilder.star import starinfo
 from lcbuilder.objectinfo.ObjectProcessingError import ObjectProcessingError
 from lcbuilder.objectinfo.preparer.LightcurveBuilder import LightcurveBuilder
 import lightkurve as lk
 import matplotlib.pyplot as plt
-import csv
+
 
 class MissionLightcurveBuilder(LightcurveBuilder):
     def __init__(self):
@@ -38,7 +40,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             lcf = lcf_search_results.download_all()
             tpfs = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
-                                           campaign=campaigns, author=author).download_all(cutout_size=(13, 13))
+                                           campaign=campaigns, author=author)\
+                .download_all(cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
             if lcf is None:
                 raise ObjectProcessingError("Light curve not found for object id " + mission_id)
             lc_data = self.extract_lc_data(lcf)
@@ -51,7 +54,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     sector = tpf.sector
                 if mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
-                apertures[sector] = tpf.pipeline_mask
+                apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
                 rows[sector] = tpf.row
                 columns[sector] = tpf.column
             for i in range(0, len(lcf.PDCSAP_FLUX)):
@@ -82,54 +85,10 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                              sector=sectors, quarter=quarters, campaign=campaigns,
                                              author=author)
-            tpfs = tpf_search_results.download_all(cutout_size=(13, 13))
+            tpfs = tpf_search_results.download_all(cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
             source = "tpf"
-            if isinstance(object_info.aperture_file, str):
-                aperture = []
-                row = None
-                column = None
-                with open(object_info.aperture_file, 'r') as fd:
-                    reader = csv.reader(fd)
-                    i = 0
-                    for line in reader:
-                        if i == 0:
-                            pixel_line = line.split(",")
-                            row = pixel_line[0]
-                            column = pixel_line[1]
-                        else:
-                            aperture.append(line)
-                        i = i + 1
-                    aperture = np.array(aperture)
-                for tpf in tpfs:
-                    if mission_prefix == self.MISSION_ID_KEPLER:
-                        sector = tpf.quarter
-                    elif mission_prefix == self.MISSION_ID_TESS:
-                        sector = tpf.sector
-                    elif mission_prefix == self.MISSION_ID_KEPLER_2:
-                        sector = tpf.campaign
-                    apertures[sector] = aperture
-                    rows[sector] = row
-                    columns[sector] = column
-            else:
-                for sector, aperture_file in object_info.aperture_file.items():
-                    aperture = []
-                    row = None
-                    column = None
-                    with open(object_info.aperture_file, 'r') as fd:
-                        reader = csv.reader(fd)
-                        i = 0
-                        for line in reader:
-                            if i == 0:
-                                pixel_line = line.split(",")
-                                row = pixel_line[0]
-                                column = pixel_line[1]
-                            else:
-                                aperture.append(line)
-                            i = i + 1
-                    aperture = np.array(aperture)
-                    apertures[sector] = aperture
-                    rows[sector] = row
-                    columns[sector] = column
+            if object_info.apertures is not None:
+                apertures = object_info.apertures
             lc = None
             for tpf in tpfs:
                 if mission_prefix == self.MISSION_ID_KEPLER:
@@ -138,7 +97,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     sector = tpf.sector
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
-                aperture = apertures[sector].astype(bool)
+                aperture = ApertureExtractor.from_pixels_to_boolean_mask(apertures[sector], tpf.column, tpf.row,
+                                                                         CUTOUT_SIZE, CUTOUT_SIZE)
                 tpf.plot(aperture_mask=aperture, mask_color='red')
                 plt.savefig(sherlock_dir + "/Aperture_[" + str(sector) + "].png")
                 plt.close()

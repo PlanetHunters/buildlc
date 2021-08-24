@@ -4,6 +4,7 @@ import sys
 import lcbuilder.eleanor
 from lcbuilder import constants
 from lcbuilder.LcBuild import LcBuild
+from lcbuilder.constants import CUTOUT_SIZE
 
 sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
 import eleanor
@@ -51,7 +52,8 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             lcf = lcf_search_results.download_all()
             tpfs = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
-                                           campaign=campaigns, author=author).download_all(cutout_size=(13, 13))
+                                           campaign=campaigns, author=author).download_all(cutout_size=(CUTOUT_SIZE,
+                                                                                                        CUTOUT_SIZE))
             lc_data = self.extract_lc_data(lcf)
             lc = lcf.PDCSAP_FLUX.stitch().remove_nans()
             transits_min_count = 1 if len(lcf) == 0 else 2
@@ -89,7 +91,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 star_info = starinfo.StarInfo(object_info.sherlock_id(), *self.star_catalog.catalog_info(int(star[0].tic)))
             data = []
             for s in star:
-                datum = TargetData(s, height=13, width=13, do_pca=True)
+                datum = TargetData(s, height=CUTOUT_SIZE, width=CUTOUT_SIZE, do_pca=True)
                 data.append(datum)
                 apertures[s.sector] = datum.aperture.astype(bool)
                 rows[s.sector] = s.position_on_chip[0]
