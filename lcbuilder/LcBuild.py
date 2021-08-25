@@ -2,8 +2,7 @@ class LcBuild:
     """
     Used as output of the LcBuilder.build method to unify the returned variables
     """
-    def __init__(self, lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, source, apertures,
-                 rows, columns):
+    def __init__(self, lc, lc_data, star_info, transits_min_count, cadence, detrend_period, sectors, source, apertures):
         self.lc = lc
         self.lc_data = lc_data
         self.star_info = star_info
@@ -13,6 +12,4 @@ class LcBuild:
         self.sectors = sectors
         self.tpf_apertures = apertures
         self.tpf_source = source
-        self.tpf_rows = rows
-        self.tpf_columns = columns
 

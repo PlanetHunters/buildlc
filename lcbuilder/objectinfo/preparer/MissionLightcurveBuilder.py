@@ -31,9 +31,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         apertures = {}
-        rows = {}
-        columns = {}
-        if object_info.aperture_file is None:
+        if object_info.apertures is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
                                            campaign=campaigns, author=author)
@@ -55,8 +53,6 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 if mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
                 apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
-                rows[sector] = tpf.row
-                columns[sector] = tpf.column
             for i in range(0, len(lcf.PDCSAP_FLUX)):
                 if lcf.PDCSAP_FLUX[i].label == mission_id:
                     if lc is None:
@@ -87,8 +83,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                                              author=author)
             tpfs = tpf_search_results.download_all(cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
             source = "tpf"
-            if object_info.apertures is not None:
-                apertures = object_info.apertures
+            apertures = object_info.apertures
             lc = None
             for tpf in tpfs:
                 if mission_prefix == self.MISSION_ID_KEPLER:
@@ -97,15 +92,15 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     sector = tpf.sector
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
-                aperture = ApertureExtractor.from_pixels_to_boolean_mask(apertures[sector], tpf.column, tpf.row,
+                boolean_aperture = ApertureExtractor.from_pixels_to_boolean_mask(apertures[sector], tpf.column, tpf.row,
                                                                          CUTOUT_SIZE, CUTOUT_SIZE)
-                tpf.plot(aperture_mask=aperture, mask_color='red')
+                tpf.plot(aperture_mask=boolean_aperture, mask_color='red')
                 plt.savefig(sherlock_dir + "/Aperture_[" + str(sector) + "].png")
                 plt.close()
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     corrector = lk.KeplerCBVCorrector(tpf)
                     corrector.plot_cbvs([1, 2, 3, 4, 5, 6, 7])
-                    raw_lc = tpf.to_lightcurve(aperture_mask=aperture).remove_nans()
+                    raw_lc = tpf.to_lightcurve(aperture_mask=boolean_aperture).remove_nans()
                     plt.savefig(sherlock_dir + "/Corrector_components[" + str(sector) + "].png")
                     plt.close()
                     it_lc = corrector.correct([1, 2, 3, 4, 5])
@@ -114,17 +109,17 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     plt.savefig(sherlock_dir + "/Raw_vs_CBVcorrected_lc[" + str(sector) + "].png")
                     plt.close()
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
-                    raw_lc = tpf.to_lightcurve(aperture_mask=aperture).remove_nans()
+                    raw_lc = tpf.to_lightcurve(aperture_mask=boolean_aperture).remove_nans()
                     it_lc = raw_lc.to_corrector("sff").correct(windows=20)
                     ax = raw_lc.plot(color='C3', label='SAP Flux', linestyle='-')
                     it_lc.plot(ax=ax, color='C2', label='CBV Corrected SAP Flux', linestyle='-')
                     plt.savefig(sherlock_dir + "/Raw_vs_SFFcorrected_lc[" + str(sector) + "].png")
                     plt.close()
                 elif mission_prefix == self.MISSION_ID_TESS:
-                    temp_lc = tpf.to_lightcurve(aperture_mask=aperture)
+                    temp_lc = tpf.to_lightcurve(aperture_mask=boolean_aperture)
                     where_are_NaNs = np.isnan(temp_lc.flux)
                     temp_lc = temp_lc[np.where(~where_are_NaNs)]
-                    regressors = tpf.flux[np.argwhere(~where_are_NaNs), ~aperture]
+                    regressors = tpf.flux[np.argwhere(~where_are_NaNs), ~boolean_aperture]
                     temp_token_lc = [temp_lc[i: i + 2000] for i in range(0, len(temp_lc), 2000)]
                     regressors_token = [regressors[i: i + 2000] for i in range(0, len(regressors), 2000)]
                     it_lc = None
@@ -163,8 +158,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 sectors = [lcfile.campaign for lcfile in tpfs]
             sectors = None if sectors is None else np.unique(sectors)
             lc_data = None
-        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures, rows,
-                       columns)
+        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures)
 
     def __calculate_transits_min_count(self, len_data):
         return 1 if len_data == 1 else 2

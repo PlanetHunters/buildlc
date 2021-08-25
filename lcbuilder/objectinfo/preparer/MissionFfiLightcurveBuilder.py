@@ -5,6 +5,7 @@ import lcbuilder.eleanor
 from lcbuilder import constants
 from lcbuilder.LcBuild import LcBuild
 from lcbuilder.constants import CUTOUT_SIZE
+from lcbuilder.photometry.aperture_extractor import ApertureExtractor
 
 sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
 import eleanor
@@ -42,8 +43,6 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
         apertures = {}
-        rows = {}
-        columns = {}
         if mission_prefix == self.MISSION_ID_KEPLER or mission_prefix == self.MISSION_ID_KEPLER_2:
             source = "tpf"
             lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence=cadence,
@@ -68,9 +67,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
-                apertures[sector] = tpf.pipeline_mask
-                rows[sector] = tpf.row
-                columns[sector] = tpf.column
+                apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
             star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
         else:
             source = "eleanor"
@@ -93,9 +90,8 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             for s in star:
                 datum = TargetData(s, height=CUTOUT_SIZE, width=CUTOUT_SIZE, do_pca=True)
                 data.append(datum)
-                apertures[s.sector] = datum.aperture.astype(bool)
-                rows[s.sector] = s.position_on_chip[0]
-                columns[s.sector] = s.position_on_chip[1]
+                apertures[s.sector] = ApertureExtractor.from_boolean_mask(datum.aperture.astype(bool),
+                                                                          s.position_on_chip[1], s.position_on_chip[0])
             quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
             lc_data = self.extract_eleanor_lc_data(data)
             lc = data[0].to_lightkurve(data[0].__dict__[object_info.eleanor_corr_flux],
@@ -107,8 +103,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                     lc = lc.append(datum.to_lightkurve(datum.pca_flux, quality_mask=quality_bitmask).remove_nans()
                                    .flatten())
                 transits_min_count = 2
-        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures, rows,
-                       columns)
+        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures)
 
     def extract_eleanor_lc_data(selfself, eleanor_data):
         time = []

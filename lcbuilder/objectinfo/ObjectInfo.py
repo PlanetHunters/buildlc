@@ -16,14 +16,14 @@ class ObjectInfo(ABC):
     star_info = None
 
     def __init__(self, initial_mask=None, initial_transit_mask=None, star_info=None,
-                 aperture_file=None, outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
+                 apertures=None, outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None):
         self.initial_mask = initial_mask
         self.initial_transit_mask = initial_transit_mask
         self.star_info = star_info
-        self.aperture_file = aperture_file
+        self.apertures = apertures
         self.outliers_sigma = outliers_sigma
         self.high_rms_enabled = high_rms_enabled
         self.high_rms_threshold = high_rms_threshold

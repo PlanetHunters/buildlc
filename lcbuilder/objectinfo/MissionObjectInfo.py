@@ -6,7 +6,7 @@ class MissionObjectInfo(ObjectInfo):
     Implementation of ObjectInfo to be used to characterize short-cadence objects from TESS, Kepler and K2 missions.
     """
     def __init__(self, mission_id: str, sectors, author=None, cadence=None, initial_mask=None,
-                 initial_transit_mask=None, star_info=None, aperture_file=None,
+                 initial_transit_mask=None, star_info=None, apertures=None,
                  outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
@@ -16,7 +16,7 @@ class MissionObjectInfo(ObjectInfo):
         @param sectors: an array of integers specifying which sectors will be analysed for the object
         @param initial_mask: an array of time ranges provided to mask them into the initial object light curve.
         @param star_info: input star information
-        @param aperture_file: the file containing 1s and 0s specifying the user selected aperture
+        @param apertures: the aperture pixels [col, row] per sector as a dictionary.
         from the initial light curve before processing.
         @param outliers_sigma: sigma used to cut upper outliers.
         @param high_rms_enabled: whether RMS masking is enabled
@@ -29,7 +29,7 @@ class MissionObjectInfo(ObjectInfo):
         @param auto_detrend_period: the fixed detrend period (disables auto_detrend)
         @param prepare_algorithm: custom curve preparation logic
         """
-        super().__init__(initial_mask, initial_transit_mask, star_info, aperture_file,
+        super().__init__(initial_mask, initial_transit_mask, star_info, apertures,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
                          auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
                          prepare_algorithm)

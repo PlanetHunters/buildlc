@@ -6,6 +6,7 @@ import re
 import lightkurve
 import numpy
 import pandas
+import yaml
 from scipy import stats
 from scipy.signal import savgol_filter
 from wotan import flatten
@@ -38,8 +39,15 @@ class LcBuilder:
 
     def build(self, object_info: ObjectInfo, object_dir: str):
         lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir)
+        if lc_build.tpf_apertures is not None:
+            with open(object_dir + "/apertures.yaml", 'w') as f:
+                apertures = {sector: [aperture.tolist() for aperture in apertures]
+                             for sector, apertures in lc_build.tpf_apertures.items()}
+                apertures = {"sectors": apertures}
+                f.write(yaml.dump(apertures, default_flow_style=True))
         sherlock_id = object_info.sherlock_id()
-        star_info = self.__complete_star_info(object_info.mission_id(), object_info.star_info, lc_build.star_info, object_dir)
+        star_info = self.__complete_star_info(object_info.mission_id(), object_info.star_info, lc_build.star_info,
+                                              object_dir)
         time_float = lc_build.lc.time.value
         flux_float = lc_build.lc.flux.value
         flux_err_float = lc_build.lc.flux_err.value
@@ -374,7 +382,7 @@ class LcBuilder:
                                           auto_detrend_period, prepare_algorithm)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
-                                          star_info, aperture, outliers_sigma, high_rms_enabled, high_rms_threshold,
+                                          star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
                                           high_rms_bin_hours, smooth_enabled, auto_detrend_enabled, auto_detrend_method,
                                           auto_detrend_ratio, auto_detrend_period, prepare_algorithm)
         elif mission is None and coords is not None and cadence > 300:
@@ -386,7 +394,7 @@ class LcBuilder:
                                               prepare_algorithm)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
-                                   aperture, outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
+                                   outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
                                    smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
                                    auto_detrend_period, prepare_algorithm)
         else:

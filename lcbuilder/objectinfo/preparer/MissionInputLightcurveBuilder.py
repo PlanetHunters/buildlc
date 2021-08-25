@@ -30,4 +30,4 @@ class MissionInputLightcurveBuilder(LightcurveBuilder):
                          usecols=['#time', 'flux', 'flux_err'])
         lc = lk.LightCurve(time=df['#time'], flux=df['flux'], flux_err=df['flux_err'])
         transits_min_count = 1
-        return LcBuild(lc, None, star_info, transits_min_count, None, None, None, None, None, None, None)
+        return LcBuild(lc, None, star_info, transits_min_count, None, None, None, None, None)
