@@ -2,6 +2,9 @@ import numpy as np
 
 
 class ApertureExtractor:
+    """
+    Used to convert aperture boolean masks into aperture pixel arrays and vice-versa.
+    """
     @staticmethod
     def from_boolean_mask(boolean_mask, column, row):
         """
@@ -27,6 +30,15 @@ class ApertureExtractor:
 
     @staticmethod
     def from_pixels_to_boolean_mask(aperture_pixels, column, row, col_len, row_len):
+        """
+        Converts an aperture pixels array into a boolean mask of a given size, centered in the given row and column.
+        :param aperture_pixels: the aperture given as column-row pairs
+        :param column: the center column
+        :param row: the center row
+        :param col_len: the lenght of the pixel columns
+        :param row_len: the length of the pixel rows
+        :return: the boolean mask centered in the column and row
+        """
         boolean_mask = np.full((row_len, col_len), False)
         for i in range(row, row + row_len):
             for j in range(column, column + col_len):
