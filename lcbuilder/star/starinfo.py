@@ -1,7 +1,8 @@
 class StarInfo:
     def __init__(self, object_id=None, ld_coefficients=None, teff=None, lum=None, logg=None, logg_err=None, radius=None,
-                 radius_min=None, radius_max=None, mass=None, mass_min=None, mass_max=None, ra=None, dec=None, j=None,
-                 j_err=None, h=None, h_err=None, k=None, k_err=None, kp=None, feh=None, feh_err=None):
+                 radius_min=None, radius_max=None, mass=None, mass_min=None, mass_max=None, ra=None, dec=None, v=None,
+                 v_err=None, j=None, j_err=None, h=None, h_err=None, k=None, k_err=None, kp=None, feh=None,
+                 feh_err=None):
         self.object_id = object_id
         self.ld_coefficients = ld_coefficients
         self.teff = teff
@@ -24,6 +25,8 @@ class StarInfo:
         self.h_err = h_err
         self.k = k
         self.k_err = k_err
+        self.v = v
+        self.v_err = v_err
         self.j = j
         self.j_err = j_err
         self.kp = kp

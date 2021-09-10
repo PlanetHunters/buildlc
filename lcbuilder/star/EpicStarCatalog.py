@@ -14,8 +14,8 @@ class EpicStarCatalog(StarCatalog):
         if (id < 201000001) or (id > 251813738):
             raise TypeError("EPIC_ID ID must be in range 201000001 to 251813738")
         columns = ["Teff", "logg", "Rad", "E_Rad", "e_Rad", "Mass", "E_Mass", "e_Mass", "RAJ2000", "DEJ2000",
-                   "Jmag", "e_Jmag", "Hmag", "e_Hmag", "Ksmag", "e_Ksmag", "Kpmag", "[Fe/H]", "E_[Fe/H]", "e_[Fe/H]",
-                   "E_logg", "e_logg"]
+                   "Vmag", "e_Vmag", "Jmag", "e_Jmag", "Hmag", "e_Hmag", "Ksmag", "e_Ksmag", "Kpmag", "[Fe/H]",
+                   "E_[Fe/H]", "e_[Fe/H]", "E_logg", "e_logg"]
         catalog = "IV/34/epic"
         result = (
             Vizier(columns=columns)
@@ -32,6 +32,8 @@ class EpicStarCatalog(StarCatalog):
         mass_min = result[0]["e_Mass"]
         ra = result[0]["RAJ2000"]
         dec = result[0]["DEJ2000"]
+        v = result[0]["Vmag"] if "Vmag" in result[0].dtype.names else None
+        v_err = result[0]["e_Vmag"] if "e_Vmag" in result[0].dtype.names else None
         j = result[0]["Jmag"] if "Jmag" in result[0].dtype.names else None
         j_err = result[0]["e_Jmag"] if "e_Jmag" in result[0].dtype.names else None
         h = result[0]["Hmag"] if "Hmag" in result[0].dtype.names else None
@@ -60,5 +62,5 @@ class EpicStarCatalog(StarCatalog):
             feh_err = feh_lo_err
         lum = self.star_luminosity(Teff, radius)
         ld, mass, mass_min, mass_max, radius, radius_min, radius_max = tls.catalog_info(EPIC_ID=id)
-        return (ld, Teff, lum, logg, logg_err, radius, radius_min, radius_max, mass, mass_min, mass_max, ra, dec, j,
-                j_err, h, h_err, k, k_err, kp, feh, feh)
+        return (ld, Teff, lum, logg, logg_err, radius, radius_min, radius_max, mass, mass_min, mass_max, ra, dec, v,
+                v_err, j, j_err, h, h_err, k, k_err, kp, feh, feh)

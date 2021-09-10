@@ -28,6 +28,8 @@ class TicStarCatalog(StarCatalog):
             lum = self.star_luminosity(Teff, radius)
         logg = result[0]["logg"] if "logg" in result[0].dtype.names else None
         logg_err = result[0]["e_logg"] if "e_logg" in result[0].dtype.names else None
+        v = result[0]["Vmag"] if "Vmag" in result[0].dtype.names else None
+        v_err = result[0]["e_Vmag"] if "e_Vmag" in result[0].dtype.names else None
         j = result[0]["Jmag"] if "Jmag" in result[0].dtype.names else None
         j_err = result[0]["e_Jmag"] if "e_Jmag" in result[0].dtype.names else None
         h = result[0]["Hmag"] if "Hmag" in result[0].dtype.names else None
@@ -36,5 +38,5 @@ class TicStarCatalog(StarCatalog):
         k_err = result[0]["e_Kmag"] if "e_Kmag" in result[0].dtype.names else None
         ld, mass, mass_min, mass_max, radius, radius_min, radius_max = tls.catalog_info(TIC_ID=id)
         return (ld, Teff, lum, logg, logg_err,
-                radius, radius_min, radius_max, mass, mass_min, mass_max, ra, dec, j, j_err,
+                radius, radius_min, radius_max, mass, mass_min, mass_max, ra, dec, v, v_err, j, j_err,
                 h, h_err, k, k_err, None, None, None)
