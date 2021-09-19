@@ -248,7 +248,7 @@ class LcBuilder:
              'logg': result_star_info.logg, 'logg_err': result_star_info.logg_err,
              'ld_a': ld_a, 'ld_b': ld_b,
              'feh': result_star_info.feh,
-             'feh_err': result_star_info.feh_err, 'v': result_star_info.j, 'v_err': result_star_info.j_err,
+             'feh_err': result_star_info.feh_err, 'v': result_star_info.v, 'v_err': result_star_info.v_err,
              'j': result_star_info.j, 'j_err': result_star_info.j_err,
              'k': result_star_info.k, 'k_err': result_star_info.k_err,
              'h': result_star_info.h, 'h_err': result_star_info.h_err,
