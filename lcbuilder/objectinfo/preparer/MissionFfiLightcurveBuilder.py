@@ -75,12 +75,14 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if isinstance(object_info, MissionFfiCoordsObjectInfo):
                 coords = SkyCoord(ra=object_info.ra, dec=object_info.dec, unit=(u.deg, u.deg))
                 star = eleanor.source.multi_sectors(coords=coords, sectors=object_info.sectors,
-                                                    post_dir=caches_root_dir + ELEANOR_CACHE_DIR)
+                                                    post_dir=caches_root_dir + ELEANOR_CACHE_DIR,
+                                                    metadata_path=caches_root_dir + ELEANOR_CACHE_DIR)
             else:
                 object_id_parsed = re.search(super().NUMBERS_REGEX, object_info.id)
                 object_id_parsed = object_info.id[object_id_parsed.regs[0][0]:object_id_parsed.regs[0][1]]
                 star = eleanor.multi_sectors(tic=object_id_parsed, sectors=object_info.sectors,
-                                             post_dir=caches_root_dir + ELEANOR_CACHE_DIR)
+                                             post_dir=caches_root_dir + ELEANOR_CACHE_DIR,
+                                             metadata_path=caches_root_dir + ELEANOR_CACHE_DIR)
             if star is None:
                 raise ValueError("No data for this object")
             if star[0].tic:
