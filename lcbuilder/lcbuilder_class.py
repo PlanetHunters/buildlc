@@ -37,8 +37,8 @@ class LcBuilder:
                                     MissionFfiIdObjectInfo: MissionFfiLightcurveBuilder(),
                                     MissionFfiCoordsObjectInfo: MissionFfiLightcurveBuilder()}
 
-    def build(self, object_info: ObjectInfo, object_dir: str):
-        lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir)
+    def build(self, object_info: ObjectInfo, object_dir: str, caches_root_dir=os.path.expanduser('~') + "/"):
+        lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir, caches_root_dir)
         if lc_build.tpf_apertures is not None:
             with open(object_dir + "/apertures.yaml", 'w') as f:
                 apertures = {sector: [aperture.tolist() for aperture in apertures]

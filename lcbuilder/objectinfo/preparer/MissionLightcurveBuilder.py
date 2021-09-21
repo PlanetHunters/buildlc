@@ -2,7 +2,7 @@ import logging
 import numpy as np
 
 from lcbuilder.LcBuild import LcBuild
-from lcbuilder.constants import CUTOUT_SIZE
+from lcbuilder.constants import CUTOUT_SIZE, LIGHTKURVE_CACHE_DIR
 from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
 from lcbuilder.photometry.aperture_extractor import ApertureExtractor
 from lcbuilder.star import starinfo
@@ -16,7 +16,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
     def __init__(self):
         super().__init__()
 
-    def build(self, object_info: MissionObjectInfo, sherlock_dir):
+    def build(self, object_info: MissionObjectInfo, sherlock_dir, caches_root_dir):
         mission_id = object_info.mission_id()
         sherlock_id = object_info.sherlock_id()
         logging.info("Retrieving star catalog info...")
@@ -35,11 +35,12 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
                                            campaign=campaigns, author=author)
-            lcf = lcf_search_results.download_all()
+            lcf = lcf_search_results.download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR)
             tpfs = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
                                            campaign=campaigns, author=author)\
-                .download_all(cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
+                .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                              cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
             if lcf is None:
                 raise ObjectProcessingError("Light curve not found for object id " + mission_id)
             lc_data = self.extract_lc_data(lcf)
@@ -81,7 +82,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                              sector=sectors, quarter=quarters, campaign=campaigns,
                                              author=author)
-            tpfs = tpf_search_results.download_all(cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
+            tpfs = tpf_search_results.download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                                                   cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
             source = "tpf"
             apertures = object_info.apertures
             lc = None

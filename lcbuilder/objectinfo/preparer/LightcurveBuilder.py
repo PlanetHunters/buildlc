@@ -27,7 +27,7 @@ class LightcurveBuilder(ABC):
         self.authors["TESS"] = "SPOC"
 
     @abstractmethod
-    def build(self, object_info, sherlock_dir):
+    def build(self, object_info, sherlock_dir, caches_root_dir):
         pass
 
     def parse_object_id(self, object_id):

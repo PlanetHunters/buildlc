@@ -4,7 +4,7 @@ import sys
 import lcbuilder.eleanor
 from lcbuilder import constants
 from lcbuilder.LcBuild import LcBuild
-from lcbuilder.constants import CUTOUT_SIZE
+from lcbuilder.constants import CUTOUT_SIZE, LIGHTKURVE_CACHE_DIR, ELEANOR_CACHE_DIR
 from lcbuilder.photometry.aperture_extractor import ApertureExtractor
 
 sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
@@ -28,7 +28,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         super().__init__()
         self.star_catalog = TicStarCatalog()
 
-    def build(self, object_info, sherlock_dir):
+    def build(self, object_info, sherlock_dir, caches_root_dir):
         mission_id = object_info.mission_id()
         sherlock_id = object_info.sherlock_id()
         logging.info("Retrieving star catalog info...")
@@ -48,11 +48,12 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence=cadence,
                                            author=author, sector=sectors, quarter=quarters,
                                            campaign=campaigns)
-            lcf = lcf_search_results.download_all()
+            lcf = lcf_search_results.download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR)
             tpfs = lk.search_targetpixelfile(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
-                                           campaign=campaigns, author=author).download_all(cutout_size=(CUTOUT_SIZE,
-                                                                                                        CUTOUT_SIZE))
+                                           campaign=campaigns, author=author)\
+                .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                              cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
             lc_data = self.extract_lc_data(lcf)
             lc = lcf.PDCSAP_FLUX.stitch().remove_nans()
             transits_min_count = 1 if len(lcf) == 0 else 2
@@ -74,12 +75,12 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if isinstance(object_info, MissionFfiCoordsObjectInfo):
                 coords = SkyCoord(ra=object_info.ra, dec=object_info.dec, unit=(u.deg, u.deg))
                 star = eleanor.source.multi_sectors(coords=coords, sectors=object_info.sectors,
-                                                    post_dir=constants.USER_HOME_ELEANOR_CACHE)
+                                                    post_dir=caches_root_dir + ELEANOR_CACHE_DIR)
             else:
                 object_id_parsed = re.search(super().NUMBERS_REGEX, object_info.id)
                 object_id_parsed = object_info.id[object_id_parsed.regs[0][0]:object_id_parsed.regs[0][1]]
                 star = eleanor.multi_sectors(tic=object_id_parsed, sectors=object_info.sectors,
-                                             post_dir=constants.USER_HOME_ELEANOR_CACHE)
+                                             post_dir=caches_root_dir + ELEANOR_CACHE_DIR)
             if star is None:
                 raise ValueError("No data for this object")
             if star[0].tic:

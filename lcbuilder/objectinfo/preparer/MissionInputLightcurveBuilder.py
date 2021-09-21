@@ -12,7 +12,7 @@ class MissionInputLightcurveBuilder(LightcurveBuilder):
     def __init__(self):
         super().__init__()
 
-    def build(self, object_info, sherlock_dir):
+    def build(self, object_info, sherlock_dir, caches_root_dir):
         mission_id = object_info.mission_id()
         sherlock_id = object_info.sherlock_id()
         if isinstance(object_info, MissionInputObjectInfo):
