@@ -10,7 +10,8 @@ class MissionFfiCoordsObjectInfo(ObjectInfo):
                  outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
-                 auto_detrend_period=None, prepare_algorithm=None):
+                 auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
+                 oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=0.01):
         """
         @param ra: the objects right ascension.
         @param dec: the objects declination.
@@ -30,11 +31,16 @@ class MissionFfiCoordsObjectInfo(ObjectInfo):
         @param auto_detrend_ratio: the ratio to be used as window size in relationship to the strongest found period
         @param auto_detrend_period: the fixed detrend period (disables auto_detrend)
         @param prepare_algorithm: custom curve preparation logic
+        @param reduce_simple_oscillations: whether to reduce dirac shaped oscillations
+        @param oscillation_snr_threshold: oscillations snr threshold to be removed
+        @param oscillation_amplitude_threshold: oscillations amplitude threshold over std
+        @param oscillation_ws_scale: oscillation window size chunks
         """
         super().__init__(initial_mask, initial_transit_mask, star_info, apertures,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
                          auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
-                         prepare_algorithm)
+                         prepare_algorithm, reduce_simple_oscillations, oscillation_snr_threshold,
+                         oscillation_amplitude_threshold, oscillation_ws_scale)
         self.ra = ra
         self.dec = dec
         self.sectors = sectors

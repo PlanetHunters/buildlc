@@ -19,7 +19,9 @@ class ObjectInfo(ABC):
                  apertures=None, outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
-                 auto_detrend_period=None, prepare_algorithm=None):
+                 auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
+                 oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=100
+    ):
         self.initial_mask = initial_mask
         self.initial_transit_mask = initial_transit_mask
         self.star_info = star_info
@@ -34,6 +36,10 @@ class ObjectInfo(ABC):
         self.auto_detrend_ratio = auto_detrend_ratio
         self.auto_detrend_period = auto_detrend_period
         self.prepare_algorithm = prepare_algorithm
+        self.reduce_simple_oscillations = reduce_simple_oscillations
+        self.oscillation_snr_threshold = oscillation_snr_threshold
+        self.oscillation_amplitude_threshold = oscillation_amplitude_threshold
+        self.oscillation_ws_scale = oscillation_ws_scale
 
     @abstractmethod
     def sherlock_id(self):

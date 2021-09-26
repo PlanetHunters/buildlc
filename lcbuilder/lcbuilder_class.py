@@ -2,7 +2,7 @@ import logging
 import math
 import os
 import re
-
+import scipy
 import lightkurve
 import numpy
 import pandas
@@ -73,7 +73,7 @@ class LcBuilder:
         # power_norm = self.running_median(periodogram.power.value, 20)
         periodogram.plot(view='period', scale='log')
         plt.title(str(sherlock_id) + " Lightcurve periodogram")
-        plt.savefig(object_dir + "/Periodogram_" + str(sherlock_id) + ".png", bbox_inches='tight')
+        plt.savefig(object_dir + "/Initial_Periodogram_" + str(sherlock_id) + ".png", bbox_inches='tight')
         plt.clf()
         # power_mod = periodogram.power.value - power_norm
         # power_mod = power_mod / np.mean(power_mod)
@@ -86,6 +86,14 @@ class LcBuilder:
             lc_build.detrend_period = object_info.auto_detrend_period
         elif object_info.auto_detrend_enabled:
             lc_build.detrend_period = self.__calculate_max_significant_period(lc, periodogram)
+        if object_info.reduce_simple_oscillations:
+            logging.info('================================================')
+            logging.info('STELLAR OSCILLATIONS REDUCTION')
+            logging.info('================================================')
+            flatten_flux = self.__reduce_simple_oscillations(object_dir, object_info.mission_id(), clean_time,
+                                                             flatten_flux, object_info.oscillation_snr_threshold,
+                                                             object_info.oscillation_amplitude_threshold,
+                                                             object_info.oscillation_ws_scale)
         if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
@@ -145,7 +153,7 @@ class LcBuilder:
         return clean_flux
 
     def __calculate_max_significant_period(self, lc, periodogram):
-        #max_accepted_period = (lc.time[len(lc.time) - 1] - lc.time[0]) / 4
+        # max_accepted_period = (lc.time[len(lc.time) - 1] - lc.time[0]) / 4
         max_accepted_period = numpy.float64(10)
         # TODO related to https://github.com/franpoz/SHERLOCK/issues/29 check whether this fits better
         max_power_index = numpy.argmax(periodogram.power)
@@ -158,10 +166,96 @@ class LcBuilder:
             period = None
         return period
 
+    def __reduce_simple_oscillations(self, object_dir, object_id, time, flux, snr_threshold=4, amplitude_threshold=0.1,
+                                     window_size_scale=0.01):
+        snr = 10
+        number = 0
+        pulsations_df = pandas.DataFrame(columns=['period', 'frequency', 'amplitude', 'phase', 'snr'])
+        lc = lightkurve.LightCurve(time=time, flux=flux)
+        periodogram = lc.to_periodogram(minimum_period=0.001, maximum_period=10, oversample_factor=1)
+        remove_signal = snr > snr_threshold
+        while remove_signal:
+            window_size = int(len(periodogram.period) * window_size_scale)
+            max_power_index = numpy.nanargmax(periodogram.power)
+            period = periodogram.period[max_power_index].value
+            frequency = 1 / period
+            power = periodogram.power[max_power_index].value
+            omega = frequency * 2. * numpy.pi
+            min_index = max_power_index - window_size // 2
+            min_index = min_index if min_index >= 0 else 0
+            max_index = max_power_index + window_size // 2
+            max_index = max_index if max_index < len(periodogram.power) else len(periodogram.power) - 1
+            indexes_around = numpy.arange(min_index, max_index, 1)
+            median_power_around = numpy.nanmedian(periodogram.power[indexes_around].value)
+            snr = periodogram.power[max_power_index].value / median_power_around
+            remove_signal = snr > snr_threshold
+            if remove_signal:
+                sa_dir = object_dir + "sa/"
+                if not os.path.exists(sa_dir):
+                    os.mkdir(sa_dir)
+                guess_amp = numpy.std(flux) * 2. ** 0.5
+                guess_offset = numpy.mean(flux)
+                guess = numpy.array([guess_amp, 0.])
+
+                def sinfunc(t, A, p):
+                    return A * numpy.sin(omega * t + p) + 1
+
+                popt, pcov = scipy.optimize.curve_fit(sinfunc, time, flux, p0=guess)
+                perr = numpy.sqrt(numpy.diag(pcov))
+                A_err, p_err = perr
+                A, p = popt
+                remove_signal = self.__is_simple_oscillation_good_enough(snr, snr_threshold, A, A_err, p, p_err,
+                                                                         np.std(flux), amplitude_threshold)
+            if remove_signal:
+                logging.info("Reducing pulsation with period %sd, flux amplitude of %s and phase minima at %s", period,
+                             A,
+                             p)
+                pulsations_df = pulsations_df.append(
+                    {'period': period, 'frequency': frequency, 'amplitude': A, 'phase': p, 'snr': snr},
+                    ignore_index=True)
+                fitfunc = lambda t: A * numpy.sin(omega * t + p) + 1
+                fit_flux = fitfunc(time)
+                self.__plot_pulsation_fit(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p, number)
+                flux = flux - fit_flux + 1
+                lc = lightkurve.LightCurve(time=time, flux=flux)
+                periodogram = lc.to_periodogram(minimum_period=0.001, maximum_period=10, oversample_factor=1)
+                self.__plot_pulsation_periodogram(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p,
+                                                  number)
+                number = number + 1
+        if len(pulsations_df) > 0:
+            pulsations_df.to_csv(sa_dir + "signals.csv", index=False)
+        return flux
+
+    def __is_simple_oscillation_good_enough(self, snr, snr_threshold, A, A_err, p, p_err, flux_std,
+                                            amplitude_threshold):
+        return snr > snr_threshold and A_err / A < 0.2 and p_err < 0.2 and A / np.std(flux) > amplitude_threshold
+
+    def __plot_pulsation_fit(self, sa_dir, object_id, time, flux, fit_flux, periodogram, period, phase, number):
+        folded_time = tls.core.fold(time, period, time[0])
+        fig, axs = plt.subplots(1, 1, figsize=(8, 4), constrained_layout=True)
+        axs.set_ylabel("Flux norm.")
+        axs.set_xlabel("Time (d)")
+        axs.set_title(object_id + " stellar activity P=" + str(round(period, 6)) + "d")
+        axs.scatter(folded_time, flux, 2, color="blue", alpha=0.3)
+        axs.scatter(folded_time, fit_flux, 2, color="orange", alpha=1)
+        signal_dir = sa_dir + "/" + str(number)
+        if not os.path.exists(signal_dir):
+            os.mkdir(signal_dir)
+        plt.savefig(signal_dir + "/folded_curve.png")
+
+    def __plot_pulsation_periodogram(self, sa_dir, object_id, time, flux, fit_flux, periodogram, period, phase, number):
+        signal_dir = sa_dir + "/" + str(number)
+        if not os.path.exists(signal_dir):
+            os.mkdir(signal_dir)
+        periodogram.plot(view='period', scale='log')
+        plt.title(object_id + " Lightcurve periodogram without signal at P=" + str(round(period, 6)) + "d")
+        plt.savefig(signal_dir + "/Periodogram.png", bbox_inches='tight')
+        plt.clf()
+
     def __detrend_by_period(self, method, time, flux, period_window):
         if method == 'gp':
             flatten_lc, lc_trend = flatten(time, flux, method=method, kernel='matern',
-                                   kernel_size=period_window, return_trend=True, break_tolerance=0.5)
+                                           kernel_size=period_window, return_trend=True, break_tolerance=0.5)
         else:
             flatten_lc, lc_trend = flatten(time, flux, window_length=period_window, return_trend=True,
                                            method=method, break_tolerance=0.5)
@@ -208,17 +302,23 @@ class LcBuilder:
                 logging.info("Star catalog doesn't provide radius. Assuming R=0.1Rsun")
                 result_star_info.assume_model_radius()
             if result_star_info.mass_min is None or numpy.isnan(result_star_info.mass_min):
-                result_star_info.mass_min = result_star_info.mass - (0.5 if result_star_info.mass > 0.5 else result_star_info.mass / 2)
-                logging.info("Star catalog doesn't provide M_low_err. Assuming M_low_err=%.3fMsun", result_star_info.mass_min)
+                result_star_info.mass_min = result_star_info.mass - (
+                    0.5 if result_star_info.mass > 0.5 else result_star_info.mass / 2)
+                logging.info("Star catalog doesn't provide M_low_err. Assuming M_low_err=%.3fMsun",
+                             result_star_info.mass_min)
             if result_star_info.mass_max is None or numpy.isnan(result_star_info.mass_max):
                 result_star_info.mass_max = result_star_info.mass + 0.5
-                logging.info("Star catalog doesn't provide M_up_err. Assuming M_low_err=%.3fMsun", result_star_info.mass_max)
+                logging.info("Star catalog doesn't provide M_up_err. Assuming M_low_err=%.3fMsun",
+                             result_star_info.mass_max)
             if result_star_info.radius_min is None or numpy.isnan(result_star_info.radius_min):
-                result_star_info.radius_min = result_star_info.radius - (0.5 if result_star_info.radius > 0.5 else result_star_info.radius / 2)
-                logging.info("Star catalog doesn't provide R_low_err. Assuming R_low_err=%.3fRsun", result_star_info.radius_min)
+                result_star_info.radius_min = result_star_info.radius - (
+                    0.5 if result_star_info.radius > 0.5 else result_star_info.radius / 2)
+                logging.info("Star catalog doesn't provide R_low_err. Assuming R_low_err=%.3fRsun",
+                             result_star_info.radius_min)
             if result_star_info.radius_max is None or numpy.isnan(result_star_info.radius_max):
                 result_star_info.radius_max = result_star_info.radius + 0.5
-                logging.info("Star catalog doesn't provide R_up_err. Assuming R_up_err=%.3fRsun", result_star_info.radius_max)
+                logging.info("Star catalog doesn't provide R_up_err. Assuming R_up_err=%.3fRsun",
+                             result_star_info.radius_max)
         logging.info('================================================')
         logging.info('STELLAR PROPERTIES')
         logging.info('================================================')
@@ -265,7 +365,8 @@ class LcBuilder:
         if object_info.prepare_algorithm is not None:
             clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
                                                                                            clean_flux, clean_flux_err)
-        if (is_short_cadence and object_info.smooth_enabled) or (object_info.high_rms_enabled and object_info.initial_mask is None):
+        if (is_short_cadence and object_info.smooth_enabled) or (
+                object_info.high_rms_enabled and object_info.initial_mask is None):
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
             logging.info('================================================')
@@ -287,7 +388,8 @@ class LcBuilder:
                 flux_partial = clean_flux[previous_jump_index:jumpIndex]
                 before_flux_partial = before_flux[previous_jump_index:jumpIndex]
                 bins = (time_partial[len(time_partial) - 1] - time_partial[0]) * bins_per_day
-                bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial, flux_partial, statistic='std', bins=bins)
+                bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial, flux_partial, statistic='std',
+                                                                        bins=bins)
                 stds_median = numpy.nanmedian(bin_stds[bin_stds > 0])
                 stds_median_array = numpy.full(len(bin_stds), stds_median)
                 rms_threshold_array = stds_median_array * object_info.high_rms_threshold
@@ -308,7 +410,7 @@ class LcBuilder:
                                  entire_bin_stds, entire_rms_threshold_array, entire_high_rms_mask, clean_time,
                                  clean_flux, 'High_RMS_Mask_' + str(star_info.object_id), object_dir)
         if is_short_cadence and object_info.smooth_enabled:
-            #logging.info('Applying Smooth phase (savgol + weighted average)')
+            # logging.info('Applying Smooth phase (savgol + weighted average)')
             logging.info('Applying Smooth phase (savgol)')
             clean_flux = self.smooth(clean_flux)
             # TODO to use convolve we need to remove the borders effect
@@ -316,8 +418,8 @@ class LcBuilder:
             # clean_flux = np.convolve(clean_flux, [0.025, 0.05, 0.1, 0.155, 0.34, 0.155, 0.1, 0.05, 0.025], "same")
             # clean_flux[0:5] = 1
             # clean_flux[len(clean_flux) - 6: len(clean_flux) - 1] = 1
-            #clean_flux = uniform_filter1d(clean_flux, 11)
-            #clean_flux = self.flatten_bw(self.FlattenInput(clean_time, clean_flux, 0.02))[0]
+            # clean_flux = uniform_filter1d(clean_flux, 11)
+            # clean_flux = self.flatten_bw(self.FlattenInput(clean_time, clean_flux, 0.02))[0]
         return clean_time, clean_flux, clean_flux_err
 
     def __plot_rms_mask(self, object_id, rms_bin_hours, bin_centers, bin_stds, rms_threshold_array, rms_mask,
@@ -366,7 +468,8 @@ class LcBuilder:
                           outliers_sigma=None, high_rms_enabled=True, high_rms_threshold=2.5,
                           high_rms_bin_hours=4, smooth_enabled=False,
                           auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
-                          auto_detrend_period=None, prepare_algorithm=None):
+                          auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
+                          oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=0.01):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
@@ -374,30 +477,41 @@ class LcBuilder:
             return MissionObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
                                      star_info, aperture, outliers_sigma, high_rms_enabled,
                                      high_rms_threshold, high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
-                                     auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm)
+                                     auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
+                                     reduce_simple_oscillations, oscillation_snr_threshold,
+                                     oscillation_amplitude_threshold, oscillation_ws_scale
+                                     )
         elif mission is not None and file is None and cadence > 300:
             return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
                                           star_info, aperture, eleanor_corr_flux,
                                           outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
                                           smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
-                                          auto_detrend_period, prepare_algorithm)
+                                          auto_detrend_period, prepare_algorithm,
+                                          reduce_simple_oscillations, oscillation_snr_threshold,
+                                          oscillation_amplitude_threshold, oscillation_ws_scale)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
                                           high_rms_bin_hours, smooth_enabled, auto_detrend_enabled, auto_detrend_method,
-                                          auto_detrend_ratio, auto_detrend_period, prepare_algorithm)
+                                          auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
+                                          reduce_simple_oscillations, oscillation_snr_threshold,
+                                          oscillation_amplitude_threshold, oscillation_ws_scale)
         elif mission is None and coords is not None and cadence > 300:
             return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
                                               initial_transit_mask, star_info, aperture,
                                               eleanor_corr_flux, outliers_sigma, high_rms_enabled, high_rms_threshold,
                                               high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
                                               auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
-                                              prepare_algorithm)
+                                              prepare_algorithm,
+                                              reduce_simple_oscillations, oscillation_snr_threshold,
+                                              oscillation_amplitude_threshold, oscillation_ws_scale)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
                                    smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
-                                   auto_detrend_period, prepare_algorithm)
+                                   auto_detrend_period, prepare_algorithm,
+                                   reduce_simple_oscillations, oscillation_snr_threshold,
+                                   oscillation_amplitude_threshold, oscillation_ws_scale)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
