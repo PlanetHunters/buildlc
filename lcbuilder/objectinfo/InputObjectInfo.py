@@ -11,7 +11,8 @@ class InputObjectInfo(ObjectInfo):
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
-                 oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=0.01):
+                 oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=0.01,
+                 oscillation_min_period=0.001):
         """
         @param input_file: the file to be used for loading the light curve
         @param initial_mask: an array of time ranges provided to mask them into the initial object light curve.
@@ -31,12 +32,13 @@ class InputObjectInfo(ObjectInfo):
         @param oscillation_snr_threshold: oscillations snr threshold to be removed
         @param oscillation_amplitude_threshold: oscillations amplitude threshold over std
         @param oscillation_ws_scale: oscillation window size chunks
+        @param oscillation_min_period: minimum period to be computed in the oscillations periodogram
         """
         super().__init__(initial_mask, initial_transit_mask, star_info, None,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
                          auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
                          prepare_algorithm, reduce_simple_oscillations, oscillation_snr_threshold,
-                         oscillation_amplitude_threshold, oscillation_ws_scale)
+                         oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period)
         self.input_file = input_file
 
     def sherlock_id(self):

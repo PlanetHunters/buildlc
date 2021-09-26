@@ -93,7 +93,8 @@ class LcBuilder:
             flatten_flux = self.__reduce_simple_oscillations(object_dir, object_info.mission_id(), clean_time,
                                                              flatten_flux, object_info.oscillation_snr_threshold,
                                                              object_info.oscillation_amplitude_threshold,
-                                                             object_info.oscillation_ws_scale)
+                                                             object_info.oscillation_ws_scale,
+                                                             object_info.oscillation_min_period)
         if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
@@ -167,18 +168,18 @@ class LcBuilder:
         return period
 
     def __reduce_simple_oscillations(self, object_dir, object_id, time, flux, snr_threshold=4, amplitude_threshold=0.1,
-                                     window_size_scale=0.01):
+                                     window_size_scale=0.01, oscillation_min_period=0.001):
         snr = 10
         number = 0
-        pulsations_df = pandas.DataFrame(columns=['period', 'frequency', 'amplitude', 'phase', 'snr'])
+        pulsations_df = pandas.DataFrame(columns=['period_d', 'frequency_microHz', 'amplitude', 'phase', 'snr'])
         lc = lightkurve.LightCurve(time=time, flux=flux)
-        periodogram = lc.to_periodogram(minimum_period=0.001, maximum_period=10, oversample_factor=1)
+        periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=2, oversample_factor=1)
         remove_signal = snr > snr_threshold
         while remove_signal:
             window_size = int(len(periodogram.period) * window_size_scale)
             max_power_index = numpy.nanargmax(periodogram.power)
             period = periodogram.period[max_power_index].value
-            frequency = 1 / period
+            frequency = 1 / (period * 24 * 3600) / 1000000
             power = periodogram.power[max_power_index].value
             omega = frequency * 2. * numpy.pi
             min_index = max_power_index - window_size // 2
@@ -204,31 +205,34 @@ class LcBuilder:
                 perr = numpy.sqrt(numpy.diag(pcov))
                 A_err, p_err = perr
                 A, p = popt
-                remove_signal = self.__is_simple_oscillation_good_enough(snr, snr_threshold, A, A_err, p, p_err,
-                                                                         np.std(flux), amplitude_threshold)
-            if remove_signal:
-                logging.info("Reducing pulsation with period %sd, flux amplitude of %s and phase minima at %s", period,
-                             A,
-                             p)
-                pulsations_df = pulsations_df.append(
-                    {'period': period, 'frequency': frequency, 'amplitude': A, 'phase': p, 'snr': snr},
-                    ignore_index=True)
                 fitfunc = lambda t: A * numpy.sin(omega * t + p) + 1
                 fit_flux = fitfunc(time)
-                self.__plot_pulsation_fit(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p, number)
-                flux = flux - fit_flux + 1
-                lc = lightkurve.LightCurve(time=time, flux=flux)
-                periodogram = lc.to_periodogram(minimum_period=0.001, maximum_period=10, oversample_factor=1)
-                self.__plot_pulsation_periodogram(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p,
-                                                  number)
-                number = number + 1
+                flux_corr = flux - fit_flux + 1
+                remove_signal = self.__is_simple_oscillation_good_enough(snr, snr_threshold, numpy.sqrt(A ** 2), A_err,
+                                                                         p, p_err, numpy.std(flux), numpy.std(flux_corr),
+                                                                         amplitude_threshold)
+                if remove_signal:
+                    logging.info("Reducing pulsation with period %sd, flux amplitude of %s and phase minima at %s", period,
+                                 A, p)
+                    pulsations_df = pulsations_df.append(
+                        {'period_d': period, 'frequency_microHz': frequency, 'amplitude': A, 'phase': p, 'snr': snr},
+                        ignore_index=True)
+                    self.__plot_pulsation_fit(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p, number)
+                    flux = flux_corr
+                    lc = lightkurve.LightCurve(time=time, flux=flux)
+                    periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=2, oversample_factor=1)
+                    self.__plot_pulsation_periodogram(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p,
+                                                      number)
+                    number = number + 1
         if len(pulsations_df) > 0:
             pulsations_df.to_csv(sa_dir + "signals.csv", index=False)
         return flux
 
-    def __is_simple_oscillation_good_enough(self, snr, snr_threshold, A, A_err, p, p_err, flux_std,
+    def __is_simple_oscillation_good_enough(self, snr, snr_threshold, A, A_err, p, p_err, flux_std, flux_corr_std,
                                             amplitude_threshold):
-        return snr > snr_threshold and A_err / A < 0.2 and p_err < 0.2 and A / np.std(flux) > amplitude_threshold
+        return snr > snr_threshold and (A_err == numpy.inf or (A_err / A < 0.2)) and \
+               (p_err == numpy.inf or (p_err < 0.2)) and A / flux_std > amplitude_threshold and \
+               flux_corr_std < flux_std
 
     def __plot_pulsation_fit(self, sa_dir, object_id, time, flux, fit_flux, periodogram, period, phase, number):
         folded_time = tls.core.fold(time, period, time[0])
@@ -469,7 +473,8 @@ class LcBuilder:
                           high_rms_bin_hours=4, smooth_enabled=False,
                           auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                           auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
-                          oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=0.01):
+                          oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=0.01,
+                          oscillation_min_period=0.001):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
@@ -479,7 +484,7 @@ class LcBuilder:
                                      high_rms_threshold, high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
                                      auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                      reduce_simple_oscillations, oscillation_snr_threshold,
-                                     oscillation_amplitude_threshold, oscillation_ws_scale
+                                     oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period
                                      )
         elif mission is not None and file is None and cadence > 300:
             return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
@@ -488,14 +493,16 @@ class LcBuilder:
                                           smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
                                           auto_detrend_period, prepare_algorithm,
                                           reduce_simple_oscillations, oscillation_snr_threshold,
-                                          oscillation_amplitude_threshold, oscillation_ws_scale)
+                                          oscillation_amplitude_threshold, oscillation_ws_scale,
+                                          oscillation_min_period)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
                                           high_rms_bin_hours, smooth_enabled, auto_detrend_enabled, auto_detrend_method,
                                           auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                           reduce_simple_oscillations, oscillation_snr_threshold,
-                                          oscillation_amplitude_threshold, oscillation_ws_scale)
+                                          oscillation_amplitude_threshold, oscillation_ws_scale,
+                                          oscillation_min_period)
         elif mission is None and coords is not None and cadence > 300:
             return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
                                               initial_transit_mask, star_info, aperture,
@@ -504,14 +511,15 @@ class LcBuilder:
                                               auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
                                               prepare_algorithm,
                                               reduce_simple_oscillations, oscillation_snr_threshold,
-                                              oscillation_amplitude_threshold, oscillation_ws_scale)
+                                              oscillation_amplitude_threshold, oscillation_ws_scale,
+                                              oscillation_min_period)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
                                    smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
                                    auto_detrend_period, prepare_algorithm,
                                    reduce_simple_oscillations, oscillation_snr_threshold,
-                                   oscillation_amplitude_threshold, oscillation_ws_scale)
+                                   oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
