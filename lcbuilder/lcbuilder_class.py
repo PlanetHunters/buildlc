@@ -197,8 +197,8 @@ class LcBuilder:
                 guess_amp = numpy.std(flux) * 2. ** 0.5
                 guess = numpy.array([guess_amp, 0.])
 
-                def sinfunc(t, A, p):
-                    return A * numpy.sin(omega * t + p) + 1
+                def sinfunc(t, a, p):
+                    return a * numpy.sin(omega * t + p) + 1
 
                 popt, pcov = scipy.optimize.curve_fit(sinfunc, time, flux, p0=guess)
                 perr = numpy.sqrt(numpy.diag(pcov))
