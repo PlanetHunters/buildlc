@@ -171,16 +171,17 @@ class LcBuilder:
                                      window_size_scale=0.01, oscillation_min_period=0.001):
         snr = 10
         number = 0
-        pulsations_df = pandas.DataFrame(columns=['period_d', 'frequency_microHz', 'amplitude', 'phase', 'snr'])
+        pulsations_df = pandas.DataFrame(columns=['period_s', 'frequency_microHz', 'amplitude', 'phase', 'snr',
+                                                  'number'])
         lc = lightkurve.LightCurve(time=time, flux=flux)
         periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=2, oversample_factor=1)
         remove_signal = snr > snr_threshold
+        sa_dir = object_dir + "sa/"
         while remove_signal:
             window_size = int(len(periodogram.period) * window_size_scale)
             max_power_index = numpy.nanargmax(periodogram.power)
             period = periodogram.period[max_power_index].value
-            frequency = 1 / (period * 24 * 3600) / 1000000
-            power = periodogram.power[max_power_index].value
+            frequency = 1 / period
             omega = frequency * 2. * numpy.pi
             min_index = max_power_index - window_size // 2
             min_index = min_index if min_index >= 0 else 0
@@ -191,11 +192,9 @@ class LcBuilder:
             snr = periodogram.power[max_power_index].value / median_power_around
             remove_signal = snr > snr_threshold
             if remove_signal:
-                sa_dir = object_dir + "sa/"
                 if not os.path.exists(sa_dir):
                     os.mkdir(sa_dir)
                 guess_amp = numpy.std(flux) * 2. ** 0.5
-                guess_offset = numpy.mean(flux)
                 guess = numpy.array([guess_amp, 0.])
 
                 def sinfunc(t, A, p):
@@ -209,22 +208,24 @@ class LcBuilder:
                 fit_flux = fitfunc(time)
                 flux_corr = flux - fit_flux + 1
                 remove_signal = self.__is_simple_oscillation_good_enough(snr, snr_threshold, numpy.sqrt(A ** 2), A_err,
-                                                                         p, p_err, numpy.std(flux), numpy.std(flux_corr),
-                                                                         amplitude_threshold)
+                                                                         p, p_err, numpy.std(flux),
+                                                                         numpy.std(flux_corr), amplitude_threshold)
                 if remove_signal:
-                    logging.info("Reducing pulsation with period %sd, flux amplitude of %s and phase minima at %s", period,
-                                 A, p)
+                    logging.info("Reducing pulsation with period %sd, flux amplitude of %s and phase minima at %s",
+                                 period, A, p)
                     pulsations_df = pulsations_df.append(
-                        {'period_d': period, 'frequency_microHz': frequency, 'amplitude': A, 'phase': p, 'snr': snr},
+                        {'period_s': period * 24 * 3600, 'frequency_microHz': frequency / 24 / 3600 * 1000000,
+                         'amplitude': A, 'phase': p, 'snr': snr, 'number': number},
                         ignore_index=True)
-                    self.__plot_pulsation_fit(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p, number)
+                    self.__plot_pulsation_fit(sa_dir, object_id, time, flux, fit_flux, period, number)
                     flux = flux_corr
                     lc = lightkurve.LightCurve(time=time, flux=flux)
-                    periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=2, oversample_factor=1)
-                    self.__plot_pulsation_periodogram(sa_dir, object_id, time, flux, fit_flux, periodogram, period, p,
-                                                      number)
+                    periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=2,
+                                                    oversample_factor=1)
+                    self.__plot_pulsation_periodogram(sa_dir, object_id, periodogram, period, number)
                     number = number + 1
         if len(pulsations_df) > 0:
+            pulsations_df = pulsations_df.sort_values(['number'], ascending=[True])
             pulsations_df.to_csv(sa_dir + "signals.csv", index=False)
         return flux
 
@@ -234,7 +235,7 @@ class LcBuilder:
                (p_err == numpy.inf or (p_err < 0.2)) and A / flux_std > amplitude_threshold and \
                flux_corr_std < flux_std
 
-    def __plot_pulsation_fit(self, sa_dir, object_id, time, flux, fit_flux, periodogram, period, phase, number):
+    def __plot_pulsation_fit(self, sa_dir, object_id, time, flux, fit_flux, period, number):
         folded_time = tls.core.fold(time, period, time[0])
         fig, axs = plt.subplots(1, 1, figsize=(8, 4), constrained_layout=True)
         axs.set_ylabel("Flux norm.")
@@ -247,7 +248,7 @@ class LcBuilder:
             os.mkdir(signal_dir)
         plt.savefig(signal_dir + "/folded_curve.png")
 
-    def __plot_pulsation_periodogram(self, sa_dir, object_id, time, flux, fit_flux, periodogram, period, phase, number):
+    def __plot_pulsation_periodogram(self, sa_dir, object_id, periodogram, period, number):
         signal_dir = sa_dir + "/" + str(number)
         if not os.path.exists(signal_dir):
             os.mkdir(signal_dir)
