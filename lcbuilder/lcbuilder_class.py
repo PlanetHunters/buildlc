@@ -75,6 +75,7 @@ class LcBuilder:
         plt.title(str(sherlock_id) + " Lightcurve periodogram")
         plt.savefig(object_dir + "/Initial_Periodogram_" + str(sherlock_id) + ".png", bbox_inches='tight')
         plt.clf()
+        plt.close()
         # power_mod = periodogram.power.value - power_norm
         # power_mod = power_mod / np.mean(power_mod)
         # periodogram.power = power_mod * u.d / u.d
