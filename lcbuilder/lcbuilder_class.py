@@ -210,7 +210,7 @@ class LcBuilder:
                                                                          p, p_err, numpy.std(flux),
                                                                          numpy.std(flux_corr), amplitude_threshold)
                 if remove_signal:
-                    logging.info("Reducing pulsation with period %sd, flux amplitude of %s, phase minima at %s and snr",
+                    logging.info("Reducing pulsation with period %sd, flux amplitude of %s, phase minima at %s and snr %s",
                                  period, A, p, snr)
                     pulsations_df = pulsations_df.append(
                         {'period_s': period * 24 * 3600, 'frequency_microHz': frequency / 24 / 3600 * 1000000,
