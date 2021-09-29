@@ -179,7 +179,7 @@ class LcBuilder:
         sa_dir = object_dir + "sa/"
         while remove_signal:
             window_size = int(len(periodogram.period) * window_size_scale)
-            max_power_index = numpy.nanargmax(periodogram.power)
+            max_power_index = numpy.nanargmax(periodogram.power.value)
             period = periodogram.period[max_power_index].value
             frequency = 1 / period
             omega = frequency * 2. * numpy.pi
@@ -207,7 +207,8 @@ class LcBuilder:
                 fitfunc = lambda t: A * numpy.sin(omega * t + p) + 1
                 fit_flux = fitfunc(time)
                 flux_corr = flux - fit_flux + 1
-                remove_signal = self.__is_simple_oscillation_good_enough(snr, snr_threshold, numpy.sqrt(A ** 2), A_err,
+                A = numpy.sqrt(A ** 2)
+                remove_signal = self.__is_simple_oscillation_good_enough(snr, snr_threshold, A, A_err,
                                                                          p, p_err, numpy.std(flux),
                                                                          numpy.std(flux_corr), amplitude_threshold)
                 if remove_signal:
@@ -247,6 +248,8 @@ class LcBuilder:
         if not os.path.exists(signal_dir):
             os.mkdir(signal_dir)
         plt.savefig(signal_dir + "/folded_curve.png")
+        plt.clf()
+        plt.close()
 
     def __plot_pulsation_periodogram(self, sa_dir, object_id, periodogram, period, number):
         signal_dir = sa_dir + "/" + str(number)
@@ -256,6 +259,7 @@ class LcBuilder:
         plt.title(object_id + " Lightcurve periodogram without signal at P=" + str(round(period, 6)) + "d")
         plt.savefig(signal_dir + "/Periodogram.png", bbox_inches='tight')
         plt.clf()
+        plt.close()
 
     def __detrend_by_period(self, method, time, flux, period_window):
         if method == 'gp':
