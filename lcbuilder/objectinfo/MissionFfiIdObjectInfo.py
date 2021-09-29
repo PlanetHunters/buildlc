@@ -12,7 +12,7 @@ class MissionFfiIdObjectInfo(ObjectInfo):
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
-                 oscillation_min_period=0.001):
+                 oscillation_min_period=0.002, oscillation_max_period=0.2):
         """
         @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
         @param sectors: an array of integers specifying which sectors will be analysed for the object
@@ -36,12 +36,14 @@ class MissionFfiIdObjectInfo(ObjectInfo):
         @param oscillation_amplitude_threshold: oscillations amplitude threshold over std
         @param oscillation_ws_scale: oscillation window size chunks
         @param oscillation_min_period: minimum period to be computed in the oscillations periodogram
+        @param oscillation_max_period: maximum period to be computed in the oscillations periodogram
         """
         super().__init__(initial_mask, initial_transit_mask, star_info, apertures,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
                          auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
                          prepare_algorithm, reduce_simple_oscillations, oscillation_snr_threshold,
-                         oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period)
+                         oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
+                         oscillation_max_period)
         self.id = mission_id
         self.sectors = sectors
         self.cadence = cadence

@@ -477,7 +477,7 @@ class LcBuilder:
                           auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                           auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                           oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
-                          oscillation_min_period=0.001):
+                          oscillation_min_period=0.002, oscillation_max_period=0.2):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
@@ -487,7 +487,8 @@ class LcBuilder:
                                      high_rms_threshold, high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
                                      auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                      reduce_simple_oscillations, oscillation_snr_threshold,
-                                     oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period
+                                     oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
+                                     oscillation_max_period
                                      )
         elif mission is not None and file is None and cadence > 300:
             return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
@@ -497,7 +498,7 @@ class LcBuilder:
                                           auto_detrend_period, prepare_algorithm,
                                           reduce_simple_oscillations, oscillation_snr_threshold,
                                           oscillation_amplitude_threshold, oscillation_ws_scale,
-                                          oscillation_min_period)
+                                          oscillation_min_period, oscillation_max_period)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
@@ -505,7 +506,7 @@ class LcBuilder:
                                           auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                           reduce_simple_oscillations, oscillation_snr_threshold,
                                           oscillation_amplitude_threshold, oscillation_ws_scale,
-                                          oscillation_min_period)
+                                          oscillation_min_period, oscillation_max_period)
         elif mission is None and coords is not None and cadence > 300:
             return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
                                               initial_transit_mask, star_info, aperture,
@@ -515,14 +516,15 @@ class LcBuilder:
                                               prepare_algorithm,
                                               reduce_simple_oscillations, oscillation_snr_threshold,
                                               oscillation_amplitude_threshold, oscillation_ws_scale,
-                                              oscillation_min_period)
+                                              oscillation_min_period, oscillation_max_period)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
                                    smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
                                    auto_detrend_period, prepare_algorithm,
                                    reduce_simple_oscillations, oscillation_snr_threshold,
-                                   oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period)
+                                   oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
+                                   oscillation_max_period)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
