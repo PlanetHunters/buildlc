@@ -91,6 +91,8 @@ class LcBuilder:
             logging.info('================================================')
             logging.info('STELLAR OSCILLATIONS REDUCTION')
             logging.info('================================================')
+            logging.info("Will extract simple pulsations between periods of %.3f d and %.3f d:",
+                         object_info.oscillation_min_period, object_info.oscillation_max_period)
             flatten_flux = self.__reduce_simple_oscillations(object_dir, object_info.mission_id(), clean_time,
                                                              flatten_flux, object_info.oscillation_snr_threshold,
                                                              object_info.oscillation_amplitude_threshold,
