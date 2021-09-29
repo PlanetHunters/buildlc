@@ -169,7 +169,7 @@ class LcBuilder:
         return period
 
     def __reduce_simple_oscillations(self, object_dir, object_id, time, flux, snr_threshold=4, amplitude_threshold=0.1,
-                                     window_size_scale=0.01, oscillation_min_period=0.001):
+                                     window_size_scale=60, oscillation_min_period=0.001):
         snr = 10
         number = 0
         pulsations_df = pandas.DataFrame(columns=['period_s', 'frequency_microHz', 'amplitude', 'phase', 'snr',
@@ -179,16 +179,13 @@ class LcBuilder:
         remove_signal = snr > snr_threshold
         sa_dir = object_dir + "sa/"
         while remove_signal:
-            window_size = int(len(periodogram.period) * window_size_scale)
+            window_size = 1 / (window_size_scale * 10e-6) / 3600 / 24
             max_power_index = numpy.nanargmax(periodogram.power.value)
             period = periodogram.period[max_power_index].value
             frequency = 1 / period
             omega = frequency * 2. * numpy.pi
-            min_index = max_power_index - window_size // 2
-            min_index = min_index if min_index >= 0 else 0
-            max_index = max_power_index + window_size // 2
-            max_index = max_index if max_index < len(periodogram.power) else len(periodogram.power) - 1
-            indexes_around = numpy.arange(min_index, max_index, 1)
+            indexes_around = numpy.argwhere((periodogram.period.value > period - window_size / 2) &
+                                            (periodogram.period.value < period + window_size / 2))
             median_power_around = numpy.nanmedian(periodogram.power[indexes_around].value)
             snr = periodogram.power[max_power_index].value / median_power_around
             remove_signal = snr > snr_threshold
@@ -213,8 +210,8 @@ class LcBuilder:
                                                                          p, p_err, numpy.std(flux),
                                                                          numpy.std(flux_corr), amplitude_threshold)
                 if remove_signal:
-                    logging.info("Reducing pulsation with period %sd, flux amplitude of %s and phase minima at %s",
-                                 period, A, p)
+                    logging.info("Reducing pulsation with period %sd, flux amplitude of %s, phase minima at %s and snr",
+                                 period, A, p, snr)
                     pulsations_df = pulsations_df.append(
                         {'period_s': period * 24 * 3600, 'frequency_microHz': frequency / 24 / 3600 * 1000000,
                          'amplitude': A, 'phase': p, 'snr': snr, 'number': number},
@@ -479,7 +476,7 @@ class LcBuilder:
                           high_rms_bin_hours=4, smooth_enabled=False,
                           auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                           auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
-                          oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=0.01,
+                          oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
                           oscillation_min_period=0.001):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
