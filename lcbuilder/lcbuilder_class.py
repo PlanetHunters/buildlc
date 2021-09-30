@@ -7,10 +7,12 @@ import lightkurve
 import numpy
 import pandas
 import yaml
+import multiprocessing
 from scipy import stats
 from scipy.signal import savgol_filter
 from wotan import flatten
 
+from lcbuilder.helper import LcbuilderHelper
 from lcbuilder.star.starinfo import StarInfo
 
 from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
@@ -37,7 +39,8 @@ class LcBuilder:
                                     MissionFfiIdObjectInfo: MissionFfiLightcurveBuilder(),
                                     MissionFfiCoordsObjectInfo: MissionFfiLightcurveBuilder()}
 
-    def build(self, object_info: ObjectInfo, object_dir: str, caches_root_dir=os.path.expanduser('~') + "/"):
+    def build(self, object_info: ObjectInfo, object_dir: str, caches_root_dir=os.path.expanduser('~') + "/",
+              cpus=multiprocessing.cpu_count() - 1):
         lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir, caches_root_dir)
         if lc_build.tpf_apertures is not None:
             with open(object_dir + "/apertures.yaml", 'w') as f:
@@ -76,6 +79,7 @@ class LcBuilder:
         plt.savefig(object_dir + "/Initial_Periodogram_" + str(sherlock_id) + ".png", bbox_inches='tight')
         plt.clf()
         plt.close()
+
         # power_mod = periodogram.power.value - power_norm
         # power_mod = power_mod / np.mean(power_mod)
         # periodogram.power = power_mod * u.d / u.d
@@ -91,13 +95,13 @@ class LcBuilder:
             logging.info('================================================')
             logging.info('STELLAR OSCILLATIONS REDUCTION')
             logging.info('================================================')
-            logging.info("Will extract simple pulsations between periods of %.3f d and %.3f d:",
-                         object_info.oscillation_min_period, object_info.oscillation_max_period)
             flatten_flux = self.__reduce_simple_oscillations(object_dir, object_info.mission_id(), clean_time,
-                                                             flatten_flux, object_info.oscillation_snr_threshold,
+                                                             flatten_flux, star_info,
+                                                             object_info.oscillation_snr_threshold,
                                                              object_info.oscillation_amplitude_threshold,
                                                              object_info.oscillation_ws_scale,
-                                                             object_info.oscillation_min_period)
+                                                             object_info.oscillation_min_period,
+                                                             cpus)
         if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
@@ -170,14 +174,17 @@ class LcBuilder:
             period = None
         return period
 
-    def __reduce_simple_oscillations(self, object_dir, object_id, time, flux, snr_threshold=4, amplitude_threshold=0.1,
-                                     window_size_scale=60, oscillation_min_period=0.001):
+    def __reduce_simple_oscillations(self, object_dir, object_id, time, flux, star_info, snr_threshold=4,
+                                     amplitude_threshold=0.1, window_size_scale=60, oscillation_min_period=0.002,
+                                     oscillation_max_period=0.2, cpus=multiprocessing.cpu_count() - 1):
+        no_transits_time, no_transits_flux = self.__reduce_visible_transits(time, flux, star_info, cpus)
         snr = 10
         number = 0
         pulsations_df = pandas.DataFrame(columns=['period_s', 'frequency_microHz', 'amplitude', 'phase', 'snr',
                                                   'number'])
-        lc = lightkurve.LightCurve(time=time, flux=flux)
-        periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=2, oversample_factor=1)
+        lc = lightkurve.LightCurve(time=no_transits_time, flux=no_transits_flux)
+        periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=oscillation_max_period,
+                                        oversample_factor=1)
         remove_signal = snr > snr_threshold
         sa_dir = object_dir + "sa/"
         while remove_signal:
@@ -194,33 +201,36 @@ class LcBuilder:
             if remove_signal:
                 if not os.path.exists(sa_dir):
                     os.mkdir(sa_dir)
-                guess_amp = numpy.std(flux) * 2. ** 0.5
+                guess_amp = numpy.std(no_transits_flux) * 2. ** 0.5
                 guess = numpy.array([guess_amp, 0.])
 
                 def sinfunc(t, a, p):
                     return a * numpy.sin(omega * t + p) + 1
 
-                popt, pcov = scipy.optimize.curve_fit(sinfunc, time, flux, p0=guess)
+                popt, pcov = scipy.optimize.curve_fit(sinfunc, no_transits_time, no_transits_flux, p0=guess)
                 perr = numpy.sqrt(numpy.diag(pcov))
                 A_err, p_err = perr
                 A, p = popt
                 fitfunc = lambda t: A * numpy.sin(omega * t + p) + 1
                 fit_flux = fitfunc(time)
+                fit_no_transit_flux = fitfunc(no_transits_time)
                 flux_corr = flux - fit_flux + 1
                 A = numpy.sqrt(A ** 2)
                 remove_signal = self.__is_simple_oscillation_good_enough(snr, snr_threshold, A, A_err,
                                                                          p, p_err, numpy.std(flux),
                                                                          numpy.std(flux_corr), amplitude_threshold)
                 if remove_signal:
-                    logging.info("Reducing pulsation with period %s d, flux amplitude of %s, phase at %s rad and snr %s",
-                                 period, A, p, snr)
+                    logging.info(
+                        "Reducing pulsation with period %sd, flux amplitude of %s, phase minima at %s and snr %s",
+                        period, A, p, snr)
                     pulsations_df = pulsations_df.append(
                         {'period_s': period * 24 * 3600, 'frequency_microHz': frequency / 24 / 3600 * 1000000,
                          'amplitude': A, 'phase': p, 'snr': snr, 'number': number},
                         ignore_index=True)
                     self.__plot_pulsation_fit(sa_dir, object_id, time, flux, fit_flux, period, number)
                     flux = flux_corr
-                    lc = lightkurve.LightCurve(time=time, flux=flux)
+                    no_transits_flux = no_transits_flux - fit_no_transit_flux + 1
+                    lc = lightkurve.LightCurve(time=no_transits_time, flux=no_transits_flux)
                     periodogram = lc.to_periodogram(minimum_period=oscillation_min_period, maximum_period=2,
                                                     oversample_factor=1)
                     self.__plot_pulsation_periodogram(sa_dir, object_id, periodogram, period, number)
@@ -229,6 +239,37 @@ class LcBuilder:
             pulsations_df = pulsations_df.sort_values(['number'], ascending=[True])
             pulsations_df.to_csv(sa_dir + "signals.csv", index=False)
         return flux
+
+    def __reduce_visible_transits(self, time, flux, star_info, cpus):
+        min_sde = 13
+        sde = min_sde + 1
+        logging.info("Searching for obvious transits to mask them before reducing the stellar pulsations")
+        while sde > min_sde:
+            model = tls.transitleastsquares(time, flux)
+            transit_period_min = 0.3
+            transit_period_max = 2
+            power_args = {"period_min": 0.3,
+                          "period_max": 2, "n_transits_min": 2,
+                          "T0_fit_margin": 0.1, "show_progress_bar": False,
+                          "use_threads": cpus, "oversampling_factor": 1,
+                          "period_grid": LcbuilderHelper.calculate_period_grid(time, transit_period_min,
+                                                                               transit_period_max, 1, star_info, 2)}
+            if star_info.ld_coefficients is not None:
+                power_args["u"] = star_info.ld_coefficients
+            power_args["R_star"] = star_info.radius
+            power_args["R_star_min"] = star_info.radius_min
+            power_args["R_star_max"] = star_info.radius_max
+            power_args["M_star"] = star_info.mass
+            power_args["M_star_min"] = star_info.mass_min
+            power_args["M_star_max"] = star_info.mass_max
+            results = model.power(**power_args)
+            sde = results.SDE
+            if sde > min_sde:
+                logging.info("Masking transit at period %.2f, T0 %.2f and duration %.2f.")
+                in_transit = tls.transit_mask(time, results.period, results.duration, results.T0)
+                time = time[~in_transit]
+                flux = flux[~in_transit]
+        return time, flux
 
     def __is_simple_oscillation_good_enough(self, snr, snr_threshold, A, A_err, p, p_err, flux_std, flux_corr_std,
                                             amplitude_threshold):
