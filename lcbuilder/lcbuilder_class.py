@@ -249,9 +249,9 @@ class LcBuilder:
             transit_period_min = 0.3
             transit_period_max = 2
             power_args = {"period_min": 0.3,
-                          "period_max": 2, "n_transits_min": 2,
-                          "T0_fit_margin": 0.1, "show_progress_bar": False,
-                          "use_threads": cpus, "oversampling_factor": 1,
+                          "period_max": 2, "n_transits_min": 2, "show_progress_bar": False,
+                          "duration_grid_step": 1.15,
+                          "use_threads": cpus, "oversampling_factor": 3,
                           "period_grid": LcbuilderHelper.calculate_period_grid(time, transit_period_min,
                                                                                transit_period_max, 1, star_info, 2)}
             if star_info.ld_coefficients is not None:
@@ -265,8 +265,10 @@ class LcBuilder:
             results = model.power(**power_args)
             sde = results.SDE
             if sde > min_sde:
-                logging.info("Masking transit at period %.2f, T0 %.2f and duration %.2f.")
-                in_transit = tls.transit_mask(time, results.period, results.duration, results.T0)
+                logging.info("Masking transit at period %.2f d, T0 %.2f and duration %.2f m.", results.period, results.T0,
+                             results.duration * 60 * 24)
+                in_transit = tls.transit_mask(time, results.period,
+                                              results.duration if results.duration > 0.01 else 0.01, results.T0)
                 time = time[~in_transit]
                 flux = flux[~in_transit]
         return time, flux
