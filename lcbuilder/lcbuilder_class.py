@@ -72,21 +72,8 @@ class LcBuilder:
                                                                              flux_err_float, star_info,
                                                                              lc_build.cadence, object_dir)
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
-        periodogram = lc.to_periodogram(minimum_period=0.05, maximum_period=15, oversample_factor=10)
-        # power_norm = self.running_median(periodogram.power.value, 20)
-        periodogram.plot(view='period', scale='log')
-        plt.title(str(sherlock_id) + " Lightcurve periodogram")
-        plt.savefig(object_dir + "/Initial_Periodogram_" + str(sherlock_id) + ".png", bbox_inches='tight')
-        plt.clf()
-        plt.close()
-
-        # power_mod = periodogram.power.value - power_norm
-        # power_mod = power_mod / np.mean(power_mod)
-        # periodogram.power = power_mod * u.d / u.d
-        # periodogram.plot(view='period', scale='log')
-        # plt.title(str(sherlock_id) + " Lightcurve normalized periodogram")
-        # plt.savefig(object_dir + "PeriodogramNorm_" + str(sherlock_id) + ".png", bbox_inches='tight')
-        # plt.clf()
+        periodogram = self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id, 
+                                              object_dir + "/Periodogram_Initial_" + str(sherlock_id) + ".png")
         if object_info.auto_detrend_period is not None:
             lc_build.detrend_period = object_info.auto_detrend_period
         elif object_info.auto_detrend_enabled:
@@ -142,7 +129,27 @@ class LcBuilder:
                 clean_flux_err = clean_flux_err[~mask]
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
         lc_build.lc = lc
+        self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id,
+                                object_dir + "/Periodogram_Final_" + str(sherlock_id) + ".png")
         return lc_build
+
+    def __plot_periodogram(self, lc, min_period, max_period, oversample, object_id, filename):
+        periodogram = lc.to_periodogram(minimum_period=min_period, maximum_period=max_period,
+                                        oversample_factor=oversample)
+        # power_norm = self.running_median(periodogram.power.value, 20)
+        periodogram.plot(view='period', scale='log')
+        plt.title(str(object_id) + " Lightcurve periodogram")
+        plt.savefig(filename)
+        plt.clf()
+        plt.close()
+        # power_mod = periodogram.power.value - power_norm
+        # power_mod = power_mod / np.mean(power_mod)
+        # periodogram.power = power_mod * u.d / u.d
+        # periodogram.plot(view='period', scale='log')
+        # plt.title(str(sherlock_id) + " Lightcurve normalized periodogram")
+        # plt.savefig(object_dir + "PeriodogramNorm_" + str(sherlock_id) + ".png", bbox_inches='tight')
+        # plt.clf()
+        return periodogram
 
     def smooth(self, flux, window_len=11, window='blackman'):
         clean_flux = savgol_filter(flux, window_len, 3)
@@ -265,7 +272,8 @@ class LcBuilder:
             results = model.power(**power_args)
             sde = results.SDE
             if sde > min_sde:
-                logging.info("Masking transit at period %.2f d, T0 %.2f and duration %.2f m.", results.period, results.T0,
+                logging.info("Masking transit at period %.2f d, T0 %.2f and duration %.2f m.", results.period,
+                             results.T0,
                              results.duration * 60 * 24)
                 in_transit = tls.transit_mask(time, results.period,
                                               results.duration if results.duration > 0.01 else 0.01, results.T0)
