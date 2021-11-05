@@ -469,6 +469,9 @@ class LcBuilder:
             self.__plot_rms_mask(star_info.object_id, object_info.high_rms_bin_hours, entire_bin_centers,
                                  entire_bin_stds, entire_rms_threshold_array, entire_high_rms_mask, clean_time,
                                  clean_flux, 'High_RMS_Mask_' + str(star_info.object_id), object_dir)
+            clean_time = clean_time[~entire_high_rms_mask]
+            clean_flux = clean_flux[~entire_high_rms_mask]
+            clean_flux_err = clean_flux_err[~entire_high_rms_mask]
         if is_short_cadence and object_info.smooth_enabled:
             # logging.info('Applying Smooth phase (savgol + weighted average)')
             logging.info('Applying Smooth phase (savgol)')
