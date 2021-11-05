@@ -447,7 +447,7 @@ class LcBuilder:
                 time_partial = clean_time[previous_jump_index:jumpIndex]
                 flux_partial = clean_flux[previous_jump_index:jumpIndex]
                 before_flux_partial = before_flux[previous_jump_index:jumpIndex]
-                bins = (time_partial[len(time_partial) - 1] - time_partial[0]) * bins_per_day
+                bins = (time_partial[len(time_partial) - 1] - time_partial[1]) * bins_per_day
                 bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial[1:], flux_partial[1:], statistic='std',
                                                                         bins=bins)
                 stds_median = numpy.nanmedian(bin_stds[bin_stds > 0])
@@ -455,7 +455,7 @@ class LcBuilder:
                 rms_threshold_array = stds_median_array * object_info.high_rms_threshold
                 too_high_bin_stds_indexes = numpy.argwhere(bin_stds > rms_threshold_array)
                 high_std_mask = numpy.array([bin_id - 1 in too_high_bin_stds_indexes for bin_id in binnumber])
-                entire_high_rms_mask = numpy.append(entire_high_rms_mask, high_std_mask)
+                entire_high_rms_mask = numpy.append(entire_high_rms_mask, numpy.append(high_std_mask[0], high_std_mask))
                 bin_width = (bin_edges[1] - bin_edges[0])
                 bin_centers = bin_edges[1:] - bin_width / 2
                 entire_bin_centers = numpy.append(entire_bin_centers, bin_centers)
@@ -467,7 +467,7 @@ class LcBuilder:
                                      'High_RMS_Mask_' + str(star_info.object_id) + '_time_' +
                                      str(time_partial[1]) + '_' + str(time_partial[-1]), object_dir)
             self.__plot_rms_mask(star_info.object_id, object_info.high_rms_bin_hours, entire_bin_centers,
-                                 entire_bin_stds, entire_rms_threshold_array, entire_high_rms_mask, clean_time,
+                                 entire_bin_stds, entire_rms_threshold_array, entire_high_rms_mask[1:], clean_time,
                                  clean_flux, 'High_RMS_Mask_' + str(star_info.object_id), object_dir)
             clean_time = clean_time[~entire_high_rms_mask]
             clean_flux = clean_flux[~entire_high_rms_mask]
@@ -502,7 +502,7 @@ class LcBuilder:
         axs[0].plot(bin_centers, rms_threshold_array, color='red', rasterized=True,
                     label='Mask Threshold')
         axs[1].scatter(time[1:], flux[1:], color='gray', alpha=0.5, rasterized=True, label="Flux norm.")
-        axs[1].scatter(time[rms_mask][1:], flux[rms_mask][1:], linewidth=1, color='red',
+        axs[1].scatter(time[1:][rms_mask], flux[1:][rms_mask], linewidth=1, color='red',
                        alpha=1.0,
                        label="High RMS")
         axs[0].legend(loc="upper right")
