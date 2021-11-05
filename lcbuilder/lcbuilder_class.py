@@ -448,7 +448,7 @@ class LcBuilder:
                 flux_partial = clean_flux[previous_jump_index:jumpIndex]
                 before_flux_partial = before_flux[previous_jump_index:jumpIndex]
                 bins = (time_partial[len(time_partial) - 1] - time_partial[0]) * bins_per_day
-                bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial, flux_partial, statistic='std',
+                bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial[1:], flux_partial[1:], statistic='std',
                                                                         bins=bins)
                 stds_median = numpy.nanmedian(bin_stds[bin_stds > 0])
                 stds_median_array = numpy.full(len(bin_stds), stds_median)
