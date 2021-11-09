@@ -139,7 +139,7 @@ class LcBuilder:
         # power_norm = self.running_median(periodogram.power.value, 20)
         periodogram.plot(view='period', scale='log')
         plt.title(str(object_id) + " Lightcurve periodogram")
-        plt.savefig(filename)
+        plt.savefig(filename, bbox_inches='tight')
         plt.clf()
         plt.close()
         # power_mod = periodogram.power.value - power_norm
