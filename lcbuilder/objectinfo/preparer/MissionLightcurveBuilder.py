@@ -30,6 +30,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
         campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
         quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
+        tokens = sectors if sectors is not None else campaigns if campaigns is not None else quarters
+        tokens = tokens if tokens is not None else "all"
         apertures = {}
         if object_info.apertures is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
@@ -42,7 +44,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
                               cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
             if lcf is None:
-                raise ObjectProcessingError("Light curve not found for object id " + mission_id)
+                raise ObjectProcessingError("The target " + str(mission_id) + " is not available for the author " + author +
+                                 ", cadence " + str(cadence) + "s and sectors " + str(tokens))
             lc_data = self.extract_lc_data(lcf)
             lc = None
             matching_objects = []
@@ -62,10 +65,16 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                         lc = lc.append(lcf.PDCSAP_FLUX[i].normalize())
                 else:
                     matching_objects.append(lcf.PDCSAP_FLUX[i].label)
+            matching_objects = set(matching_objects)
             if len(matching_objects) > 0:
                 logging.warning("================================================")
                 logging.warning("TICS IN THE SAME PIXEL: " + str(matching_objects))
                 logging.warning("================================================")
+            if lc is None:
+                tokens = sectors if sectors is not None else campaigns if campaigns is not None else quarters
+                tokens = tokens if tokens is not None else "all"
+                raise ObjectProcessingError("The target " + str(mission_id) + " is not available for the author " + author +
+                                 ", cadence " + str(cadence) + "s and sectors " + str(tokens))
             lc = lc.remove_nans()
             transits_min_count = self.__calculate_transits_min_count(len(lcf))
             if mission_prefix == self.MISSION_ID_KEPLER:
