@@ -10,6 +10,7 @@ from lcbuilder.objectinfo.ObjectProcessingError import ObjectProcessingError
 from lcbuilder.objectinfo.preparer.LightcurveBuilder import LightcurveBuilder
 import lightkurve as lk
 import matplotlib.pyplot as plt
+import os
 
 
 class MissionLightcurveBuilder(LightcurveBuilder):
@@ -56,6 +57,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     sector = tpf.sector
                 if mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
+                self.__plot_tpf(tpf, sector, tpf.pipeline_mask, sherlock_dir)
                 apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
             for i in range(0, len(lcf.PDCSAP_FLUX)):
                 if lcf.PDCSAP_FLUX[i].label == mission_id:
@@ -105,8 +107,9 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     sector = tpf.campaign
                 boolean_aperture = ApertureExtractor.from_pixels_to_boolean_mask(apertures[sector], tpf.column, tpf.row,
                                                                          CUTOUT_SIZE, CUTOUT_SIZE)
+                self.__plot_tpf(tpf, sector, boolean_aperture, sherlock_dir)
                 tpf.plot(aperture_mask=boolean_aperture, mask_color='red')
-                plt.savefig(sherlock_dir + "/Aperture_[" + str(sector) + "].png")
+                plt.savefig(sherlock_dir + "/fov/Aperture_[" + str(sector) + "].png")
                 plt.close()
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     corrector = lk.KeplerCBVCorrector(tpf)
@@ -170,6 +173,14 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             sectors = None if sectors is None else np.unique(sectors)
             lc_data = None
         return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures)
+
+    def __plot_tpf(self, tpf, sector, aperture, dir):
+        dir = dir + "/fov/"
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+        tpf.plot_pixels(aperture_mask=aperture)
+        plt.savefig(dir + "/Flux_pixels[" + str(sector) + "].png")
+        plt.close()
 
     def __calculate_transits_min_count(self, len_data):
         return 1 if len_data == 1 else 2

@@ -22,6 +22,7 @@ from lcbuilder.star.TicStarCatalog import TicStarCatalog
 from astropy import units as u
 import lightkurve as lk
 from lightkurve.correctors import SFFCorrector
+import matplotlib.pyplot as plt
 
 class MissionFfiLightcurveBuilder(LightcurveBuilder):
     def __init__(self):
@@ -69,6 +70,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
                 apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
+                self.__plot_tpf(self, tpf, sector, tpf.pipeline_mask, sherlock_dir)
             star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
         else:
             source = "eleanor"
@@ -88,6 +90,11 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if star[0].tic:
                 # TODO FIX star info objectid
                 logging.info("Assotiated TIC is " + str(star[0].tic))
+                tpfs = lk.search_targetpixelfile(str("TIC " + star[0].tic), mission="TESS", cadence=cadence,
+                                                 sector=sectors, quarter=quarters,
+                                                 campaign=campaigns, author="TESS-SPOC") \
+                    .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                                  cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
                 star_info = starinfo.StarInfo(object_info.sherlock_id(), *self.star_catalog.catalog_info(int(star[0].tic)))
             data = []
             for s in star:
@@ -95,6 +102,9 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 data.append(datum)
                 apertures[s.sector] = ApertureExtractor.from_boolean_mask(datum.aperture.astype(bool),
                                                                           s.position_on_chip[1], s.position_on_chip[0])
+                for tpf in tpfs:
+                    if tpf.sector == s.sector:
+                        self.__plot_tpf(tpf, tpf.sector, datum.aperture.astype(bool), sherlock_dir)
             quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
             lc_data = self.extract_eleanor_lc_data(data)
             lc = data[0].to_lightkurve(data[0].__dict__[object_info.eleanor_corr_flux],
@@ -152,3 +162,11 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         lc_data['motion_x'] = motion_x
         lc_data['motion_y'] = motion_y
         return lc_data
+
+    def __plot_tpf(self, tpf, sector, aperture, dir):
+        dir = dir + "/fov/"
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+        tpf.plot_pixels(aperture_mask=aperture)
+        plt.savefig(dir + "/Flux_pixels[" + str(sector) + "].png")
+        plt.close()
