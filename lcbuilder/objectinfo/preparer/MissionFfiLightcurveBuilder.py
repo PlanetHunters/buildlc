@@ -90,7 +90,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if star[0].tic:
                 # TODO FIX star info objectid
                 logging.info("Assotiated TIC is " + str(star[0].tic))
-                tpfs = lk.search_targetpixelfile(str("TIC " + star[0].tic), mission="TESS", cadence=cadence,
+                tpfs = lk.search_targetpixelfile("TIC " + str(star[0].tic), mission="TESS", cadence=cadence,
                                                  sector=sectors, quarter=quarters,
                                                  campaign=campaigns, author="TESS-SPOC") \
                     .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
