@@ -34,6 +34,11 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         tokens = sectors if sectors is not None else campaigns if campaigns is not None else quarters
         tokens = tokens if tokens is not None else "all"
         apertures = {}
+        tpf_search_results = lk.search_targetpixelfile(str(mission_id))
+        for tpf_search_result in tpf_search_results:
+            logging.info("There is data for Mission: %s, Year %.0f, Author: %s, ExpTime: %.0f",
+                         tpf_search_result.mission[0], tpf_search_result.year[0], tpf_search_result.author[0],
+                         tpf_search_result.exptime[0])
         if object_info.apertures is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
