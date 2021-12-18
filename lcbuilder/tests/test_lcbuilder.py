@@ -119,6 +119,15 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertAlmostEqual(star_info.ra, 136.573975, 3)
         self.assertAlmostEqual(star_info.dec, 19.402252, 3)
 
+    def test_binning(self):
+        directory = os.path.dirname(__file__) + "/input.csv"
+        lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
+        self.assertEquals(4551, len(lc_build.lc))
+        lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=2), "./")
+        self.assertEquals(2275, len(lc_build.lc))
+        lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=4), "./")
+        self.assertEquals(1137, len(lc_build.lc))
+
 
 if __name__ == '__main__':
     unittest.main()

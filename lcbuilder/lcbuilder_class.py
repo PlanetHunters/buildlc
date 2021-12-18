@@ -422,19 +422,29 @@ class LcBuilder:
         clean_flux = flux
         clean_flux_err = flux_err
         is_short_cadence = cadence <= 300
-        if object_info.prepare_algorithm is not None:
-            clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
-                                                                                           clean_flux, clean_flux_err)
-        if (is_short_cadence and object_info.smooth_enabled) or (
+        if (object_info.binning > 1) or (object_info.prepare_algorithm) or (is_short_cadence and object_info.smooth_enabled) or (
                 object_info.high_rms_enabled and object_info.initial_mask is None):
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
             logging.info('================================================')
+        if object_info.binning > 1:
+            bins = len(time) / object_info.binning
+            bin_means, bin_edges, binnumber = stats.binned_statistic(time, flux, statistic='mean',
+                                                                     bins=bins)
+            bin_stds, _, _ = stats.binned_statistic(time, flux, statistic='std', bins=bins)
+            bin_width = (bin_edges[1] - bin_edges[0])
+            bin_centers = bin_edges[1:] - bin_width / 2
+            clean_time = bin_centers
+            clean_flux = bin_means
+            clean_flux_err = bin_stds
+        if object_info.prepare_algorithm is not None:
+            clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
+                                                                                           clean_flux, clean_flux_err)
         if object_info.high_rms_enabled and object_info.initial_mask is None:
             logging.info('Masking high RMS areas by a factor of %.2f with %.1f hours binning',
                          object_info.high_rms_threshold, object_info.high_rms_bin_hours)
             bins_per_day = 24 / object_info.high_rms_bin_hours
-            dif = time[1:] - time[:-1]
+            dif = clean_time[1:] - clean_time[:-1]
             jumps = numpy.where(dif > 3)[0]
             jumps = numpy.append(jumps, len(clean_time))
             before_flux = clean_flux
