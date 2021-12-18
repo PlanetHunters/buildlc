@@ -38,7 +38,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         for tpf_search_result in tpf_search_results:
             logging.info("There is data for Mission: %s, Year %.0f, Author: %s, ExpTime: %.0f",
                          tpf_search_result.mission[0], tpf_search_result.year[0], tpf_search_result.author[0],
-                         tpf_search_result.exptime[0])
+                         tpf_search_result.exptime[0].value)
         if object_info.apertures is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
