@@ -7,7 +7,8 @@ class LcbuilderHelper:
         super().__init__()
 
     @staticmethod
-    def calculate_period_grid(time, min_period, max_period, oversampling, star_info, transits_min_count, max_oversampling=15):
+    def calculate_period_grid(time, min_period, max_period, oversampling, star_info, transits_min_count,
+                              max_oversampling=15):
         time_span_curve = time[-1] - time[0]
         dif = time[1:] - time[:-1]
         jumps = np.where(dif > 1)[0]
