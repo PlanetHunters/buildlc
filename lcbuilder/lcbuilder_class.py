@@ -151,20 +151,20 @@ class LcBuilder:
         # plt.clf()
         return periodogram
 
-    def smooth(self, flux, window_len=11, window='blackman'):
-        clean_flux = savgol_filter(flux, window_len, 3)
-        # if window_len < 3:
+    def smooth(self, flux, sg_window_len=11, convolve_window_len=7, window='blackman'):
+        # if convolve_window_len < 3 or sg_window_len < 3:
         #     return flux
         # if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         #     raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
-        # s = np.r_[np.ones(window_len//2), clean_flux, np.ones(window_len//2)]
+        # s = numpy.r_[numpy.ones(convolve_window_len // 2), flux, numpy.ones(convolve_window_len // 2)]
         # # print(len(s))
         # if window == 'flat':  # moving average
-        #     w = np.ones(window_len, 'd')
+        #     w = numpy.ones(convolve_window_len, 'd')
         # else:
-        #     w = eval('np.' + window + '(window_len)')
+        #     w = eval('numpy .' + window + '(window_len)')
         # # TODO probably problematic with big gaps in the middle of the curve
-        # clean_flux = np.convolve(w / w.sum(), s, mode='valid')
+        # clean_flux = numpy.convolve(w / w.sum(), s, mode='valid')
+        clean_flux = savgol_filter(flux, sg_window_len, 3)
         return clean_flux
 
     def __calculate_max_significant_period(self, lc, periodogram):
