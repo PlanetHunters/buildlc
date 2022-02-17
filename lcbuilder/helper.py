@@ -28,4 +28,4 @@ class LcbuilderHelper:
             previous_jump_index = jumpIndex
         return DefaultTransitTemplateGenerator() \
             .period_grid(star_info.radius, star_info.mass, time_span_curve, min_period,
-                         max_period, oversampling, transits_min_count, time_span_all_sectors), oversampling
+                         max_period, oversampling, transits_min_count, time_span_curve), oversampling
