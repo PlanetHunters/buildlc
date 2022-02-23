@@ -255,12 +255,13 @@ class LcBuilder:
             model = tls.transitleastsquares(time, flux)
             transit_period_min = 0.3
             transit_period_max = 2
+            period_grid, oversampling = LcbuilderHelper.calculate_period_grid(time, transit_period_min,
+                                                                               transit_period_max, 1, star_info, 2)
             power_args = {"period_min": 0.3,
                           "period_max": 2, "n_transits_min": 2, "show_progress_bar": False,
                           "duration_grid_step": 1.15,
-                          "use_threads": cpus, "oversampling_factor": 3,
-                          "period_grid": LcbuilderHelper.calculate_period_grid(time, transit_period_min,
-                                                                               transit_period_max, 1, star_info, 2)}
+                          "use_threads": cpus, "oversampling_factor": oversampling,
+                          "period_grid": period_grid}
             if star_info.ld_coefficients is not None:
                 power_args["u"] = star_info.ld_coefficients
             power_args["R_star"] = star_info.radius
