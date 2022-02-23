@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import sys
 import lcbuilder.eleanor
 from lcbuilder import constants
@@ -49,6 +50,9 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             logging.info("There is data for Mission: %s, Year %.0f, Author: %s, ExpTime: %.0f",
                          tpf_search_result.mission[0], tpf_search_result.year[0], tpf_search_result.author[0],
                          tpf_search_result.exptime[0].value)
+        tpfs_dir = sherlock_dir + "/tpfs/"
+        if not os.path.exists(tpfs_dir):
+            os.mkdir(tpfs_dir)
         if mission_prefix == self.MISSION_ID_KEPLER or mission_prefix == self.MISSION_ID_KEPLER_2:
             source = "tpf"
             lcf_search_results = lk.search_lightcurvefile(str(mission_id), mission=mission, cadence=cadence,
@@ -69,7 +73,10 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 logging.info("Correcting K2 motion in light curve...")
                 sectors = [lcfile.campaign for lcfile in lcf]
                 lc = SFFCorrector(lc).correct(windows=20)
+            if not os.path.exists(tpfs_dir):
+                os.mkdir(tpfs_dir)
             for tpf in tpfs:
+                shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
@@ -106,6 +113,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 data.append(datum)
                 for tpf in tpfs:
                     if tpf.sector == s.sector:
+                        shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
                         apertures[s.sector] = ApertureExtractor.from_boolean_mask(datum.aperture.astype(bool),
                                                                                   tpf.column, tpf.row)
             quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)

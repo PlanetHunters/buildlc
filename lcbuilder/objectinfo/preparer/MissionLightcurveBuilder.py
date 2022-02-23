@@ -1,4 +1,6 @@
 import logging
+import shutil
+
 import numpy as np
 
 from lcbuilder.LcBuild import LcBuild
@@ -39,6 +41,9 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             logging.info("There is data for Mission: %s, Year %.0f, Author: %s, ExpTime: %.0f",
                          tpf_search_result.mission[0], tpf_search_result.year[0], tpf_search_result.author[0],
                          tpf_search_result.exptime[0].value)
+        tpfs_dir = sherlock_dir + "/tpfs/"
+        if not os.path.exists(tpfs_dir):
+            os.mkdir(tpfs_dir)
         if object_info.apertures is None:
             lcf_search_results = lk.search_lightcurve(str(mission_id), mission=mission, cadence=cadence,
                                            sector=sectors, quarter=quarters,
@@ -56,6 +61,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             lc = None
             matching_objects = []
             for tpf in tpfs:
+                shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_TESS:
@@ -103,6 +109,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             apertures = object_info.apertures
             lc = None
             for tpf in tpfs:
+                shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_TESS:
