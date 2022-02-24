@@ -61,7 +61,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             lc = None
             matching_objects = []
             for tpf in tpfs:
-                shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
+                shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_TESS:
@@ -109,7 +109,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             apertures = object_info.apertures
             lc = None
             for tpf in tpfs:
-                shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
+                shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_TESS:

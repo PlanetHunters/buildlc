@@ -76,7 +76,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if not os.path.exists(tpfs_dir):
                 os.mkdir(tpfs_dir)
             for tpf in tpfs:
-                shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
+                shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
@@ -113,7 +113,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                 data.append(datum)
                 for tpf in tpfs:
                     if tpf.sector == s.sector:
-                        shutil.copy(tpf.data.path, tpfs_dir + os.path.basename(tpf.data.path))
+                        shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                         apertures[s.sector] = ApertureExtractor.from_boolean_mask(datum.aperture.astype(bool),
                                                                                   tpf.column, tpf.row)
             quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
