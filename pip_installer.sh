@@ -15,7 +15,9 @@ if ! [[ -z ${tests_results} ]]; then
   git push --tags
   python3 setup.py sdist bdist_wheel
   python3 -m twine upload dist/*
+  rm tests.log
 else
   echo "TESTS FAILED. See tests.log"
 fi
 rm dist* -r
+rm -r .tox
