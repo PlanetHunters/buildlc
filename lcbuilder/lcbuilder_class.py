@@ -12,6 +12,7 @@ from scipy import stats
 from scipy.signal import savgol_filter
 from wotan import flatten
 
+from lcbuilder import constants
 from lcbuilder.helper import LcbuilderHelper
 from lcbuilder.star.starinfo import StarInfo
 
@@ -30,7 +31,8 @@ import foldedleastsquares as tls
 
 class LcBuilder:
     COORDS_REGEX = "^(-{0,1}[0-9.]+)_(-{0,1}[0-9.]+)$"
-    DEFAULT_CADENCES_FOR_MISSION = {"Kepler": 60, "K2": 60, "TESS": 120}
+    DEFAULT_CADENCES_FOR_MISSION = {constants.MISSION_KEPLER: 60, constants.MISSION_K2: 60,
+                                    constants.MISSION_TESS: 120}
 
     def __init__(self) -> None:
         self.lightcurve_builders = {InputObjectInfo: MissionInputLightcurveBuilder(),

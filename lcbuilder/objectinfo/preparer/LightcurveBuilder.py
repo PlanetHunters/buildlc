@@ -4,6 +4,8 @@ import astropy.io.fits as astropy_fits
 import re
 import pandas
 from abc import ABC, abstractmethod
+
+from lcbuilder import constants
 from lcbuilder.star.EpicStarCatalog import EpicStarCatalog
 from lcbuilder.star.KicStarCatalog import KicStarCatalog
 from lcbuilder.star.TicStarCatalog import TicStarCatalog
@@ -22,9 +24,9 @@ class LightcurveBuilder(ABC):
         self.star_catalogs[self.MISSION_ID_KEPLER_2] = EpicStarCatalog()
         self.star_catalogs[self.MISSION_ID_TESS] = TicStarCatalog()
         self.authors = {}
-        self.authors["Kepler"] = "Kepler"
-        self.authors["K2"] = "K2"
-        self.authors["TESS"] = "SPOC"
+        self.authors[constants.MISSION_KEPLER] = constants.MISSION_KEPLER
+        self.authors[constants.MISSION_K2] = constants.MISSION_K2
+        self.authors[constants.MISSION_TESS] = "SPOC"
 
     @abstractmethod
     def build(self, object_info, sherlock_dir, caches_root_dir):
@@ -32,18 +34,18 @@ class LightcurveBuilder(ABC):
 
     def parse_object_id(self, object_id):
         if object_id is None:
-            return "TESS", self.MISSION_ID_TESS, None
+            return constants.MISSION_TESS, self.MISSION_ID_TESS, None
         object_id_parsed = re.search(self.OBJECT_ID_REGEX, object_id)
         if object_id_parsed is None:
             return None, None, None
         mission_prefix = object_id[object_id_parsed.regs[1][0]:object_id_parsed.regs[1][1]]
         id = object_id[object_id_parsed.regs[2][0]:object_id_parsed.regs[2][1]]
         if mission_prefix == self.MISSION_ID_KEPLER:
-            mission = "Kepler"
+            mission = constants.MISSION_KEPLER
         elif mission_prefix == self.MISSION_ID_KEPLER_2:
-            mission = "K2"
+            mission = constants.MISSION_K2
         elif mission_prefix == self.MISSION_ID_TESS:
-            mission = "TESS"
+            mission = constants.MISSION_TESS
         else:
             mission = None
         return mission, mission_prefix, int(id)

@@ -41,9 +41,9 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
         star_info = None
         if mission_prefix not in self.star_catalogs:
             raise ValueError("Wrong object id " + mission_id)
-        sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
-        campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
-        quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
+        sectors = None if object_info.sectors == 'all' or mission != constants.MISSION_TESS else object_info.sectors
+        campaigns = None if object_info.sectors == 'all' or mission != constants.MISSION_K2 else object_info.sectors
+        quarters = None if object_info.sectors == 'all' or mission != constants.MISSION_KEPLER else object_info.sectors
         apertures = {}
         tpf_search_results = lk.search_targetpixelfile(str(mission_id))
         for tpf_search_result in tpf_search_results:
@@ -76,7 +76,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if not os.path.exists(tpfs_dir):
                 os.mkdir(tpfs_dir)
             for tpf in tpfs:
-                shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
+                shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.data.path))
                 if mission_prefix == self.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == self.MISSION_ID_KEPLER_2:
@@ -101,8 +101,8 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
             if star[0].tic:
                 # TODO FIX star info objectid
                 logging.info("Assotiated TIC is " + str(star[0].tic))
-                tpfs = lk.search_targetpixelfile("TIC " + str(star[0].tic), mission="TESS", cadence=cadence,
-                                                 sector=sectors, quarter=quarters,
+                tpfs = lk.search_targetpixelfile("TIC " + str(star[0].tic), mission=constants.MISSION_TESS,
+                                                 cadence=cadence, sector=sectors, quarter=quarters,
                                                  campaign=campaigns, author="TESS-SPOC") \
                     .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
                                   cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))

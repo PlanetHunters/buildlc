@@ -3,6 +3,7 @@ import shutil
 
 import numpy as np
 
+from lcbuilder import constants
 from lcbuilder.LcBuild import LcBuild
 from lcbuilder.constants import CUTOUT_SIZE, LIGHTKURVE_CACHE_DIR
 from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
@@ -30,9 +31,9 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         author = object_info.author if object_info.author is not None else self.authors[mission]
         star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
         logging.info("Downloading lightcurve files...")
-        sectors = None if object_info.sectors == 'all' or mission != "TESS" else object_info.sectors
-        campaigns = None if object_info.sectors == 'all' or mission != "K2" else object_info.sectors
-        quarters = None if object_info.sectors == 'all' or mission != "Kepler" else object_info.sectors
+        sectors = None if object_info.sectors == 'all' or mission != constants.MISSION_TESS else object_info.sectors
+        campaigns = None if object_info.sectors == 'all' or mission != constants.MISSION_K2 else object_info.sectors
+        quarters = None if object_info.sectors == 'all' or mission != constants.MISSION_KEPLER else object_info.sectors
         tokens = sectors if sectors is not None else campaigns if campaigns is not None else quarters
         tokens = tokens if tokens is not None else "all"
         apertures = {}
