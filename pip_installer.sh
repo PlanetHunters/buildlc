@@ -21,3 +21,4 @@ else
 fi
 rm dist* -r
 rm -r .tox
+rm -r build
