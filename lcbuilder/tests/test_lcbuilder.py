@@ -119,6 +119,26 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertAlmostEqual(star_info.ra, 136.573975, 3)
         self.assertAlmostEqual(star_info.dec, 19.402252, 3)
 
+    def test_build(self):
+        lc_build = LcBuilder().build(MissionObjectInfo("TIC 352315023", [13]), "./")
+        self.assertEquals(18107, len(lc_build.lc))
+        self.assertEquals(20479, len(lc_build.lc_data))
+        lc_build = LcBuilder().build(MissionObjectInfo("KIC 12557548", [13]), "./")
+        self.assertEquals(127850, len(lc_build.lc))
+        self.assertEquals(130290, len(lc_build.lc_data))
+        lc_build = LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
+        self.assertEquals(107670, len(lc_build.lc))
+        self.assertEquals(116820, len(lc_build.lc_data))
+        lc_build = LcBuilder().build(MissionFfiIdObjectInfo("KIC 12557548", [1]), "./")
+        self.assertEquals(1543, len(lc_build.lc))
+        self.assertEquals(1639, len(lc_build.lc_data))
+        lc_build = LcBuilder().build(MissionFfiIdObjectInfo("EPIC 211945201", [5]), "./")
+        self.assertEquals(3324, len(lc_build.lc))
+        self.assertEquals(3663, len(lc_build.lc_data))
+        lc_build = LcBuilder().build(MissionFfiIdObjectInfo("TIC 352315023", [13]), "./")
+        self.assertEquals(1223, len(lc_build.lc))
+        self.assertEquals(1320, len(lc_build.lc_data))
+
     def test_binning(self):
         directory = os.path.dirname(__file__) + "/input.csv"
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
