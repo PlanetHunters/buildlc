@@ -59,8 +59,8 @@ class TestsApertures(unittest.TestCase):
                           [1136, 144]]}
         tpfs = lightkurve.search_targetpixelfile(target="TIC 251848941", cadence=120, author="SPOC") \
             .download_all(cutout_size=CUTOUT_SIZE)
-        self.assertTrue(False not in (ApertureExtractor.from_pixels_to_boolean_mask(apertures[2], tpfs[0].column, tpfs[0].row, CUTOUT_SIZE, CUTOUT_SIZE) == tpfs[0].pipeline_mask))
-        self.assertTrue(False not in (ApertureExtractor.from_pixels_to_boolean_mask(apertures[29], tpfs[1].column, tpfs[1].row, CUTOUT_SIZE, CUTOUT_SIZE) == tpfs[1].pipeline_mask))
+        self.assertTrue(False not in (ApertureExtractor.from_pixels_to_boolean_mask(apertures[2], tpfs[0].column, tpfs[0].row, len(tpfs[1].pipeline_mask), len(tpfs[0].pipeline_mask)) == tpfs[0].pipeline_mask))
+        self.assertTrue(False not in (ApertureExtractor.from_pixels_to_boolean_mask(apertures[29], tpfs[1].column, tpfs[1].row, len(tpfs[1].pipeline_mask), len(tpfs[0].pipeline_mask)) == tpfs[1].pipeline_mask))
 
     def test_cyclic_conversion(self):
         tpfs = lightkurve.search_targetpixelfile(target="TIC 251848941", cadence=120, author="SPOC") \
@@ -68,7 +68,7 @@ class TestsApertures(unittest.TestCase):
         for tpf in tpfs:
             self.assertTrue((tpf.pipeline_mask == ApertureExtractor.from_pixels_to_boolean_mask(
                 ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row), tpf.column, tpf.row,
-                CUTOUT_SIZE, CUTOUT_SIZE)).all())
+                len(tpf.pipeline_mask[1]), len(tpf.pipeline_mask[0]))).all())
 
 
 if __name__ == '__main__':
