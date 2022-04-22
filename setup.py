@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-version = "0.7.20"
+version = "0.7.21"
 setuptools.setup(
     name="lcbuilder", # Replace with your own username
     version=version,
@@ -19,16 +19,13 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
-    install_requires=['numpy==1.20.1; python_version>="3.7"',
-                        'numpy==1.19; python_version<"3.7"',
-                        'astropy==4.3.post1; python_version>="3.7"',
-                        'astropy==4.1; python_version<"3.7"',
-                        'pandas==1.3.1; python_version>="3.7"',
-                        'pandas==1.1.5; python_version<"3.7"',
-                        "lightkurve==2.0.9",
+    python_requires='>=3.8',
+    install_requires=['numpy==1.20.1; python_version>="3.8"',
+                        'astropy==5.0.4; python_version>="3.8"',
+                        'pandas==1.3.1; python_version>="3.8"',
+                        "lightkurve==2.2.0",
                         "photutils==1.0.2",
-                        "scipy==1.5.4",
+                        "scipy==1.8.0",
                         "tess-point==0.6.1",
                         'torch==1.9.0',
                         "foldedleastsquares==1.0.33",
