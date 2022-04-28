@@ -29,3 +29,10 @@ class LcbuilderHelper:
         return DefaultTransitTemplateGenerator() \
             .period_grid(star_info.radius, star_info.mass, time_span_curve, min_period,
                          max_period, oversampling, transits_min_count, time_span_curve), oversampling
+
+    @staticmethod
+    def compute_cadence(time):
+        cadence_array = np.diff(time) * 24 * 60 * 60
+        cadence_array = cadence_array[~np.isnan(cadence_array)]
+        cadence_array = cadence_array[cadence_array > 0]
+        return int(np.round(np.nanmedian(cadence_array)))
