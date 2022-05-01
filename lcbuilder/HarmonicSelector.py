@@ -11,6 +11,8 @@ class HarmonicSelector:
     def multiple_of(a, b, tolerance=0.05):
         a = np.float(a)
         b = np.float(b)
+        if a <= 0 or b <= 0:
+            return 0
         mod_ab = a % b
         mod_ba = b % a
         is_a_multiple_of_b = a >= b and a < b * 3 + tolerance * 3 and (
