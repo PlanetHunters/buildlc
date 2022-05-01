@@ -1,6 +1,6 @@
 import numpy as np
 
-'''Calculates the Habitability Zone of a star based on the Kopparapu et al (2003) equations. These equations are only
+'''Calculates the Habitability Zone of a star based on the Kopparapu et al (2013) equations. These equations are only
 valid for stars between 2600 K < Teff < 7200 K.'''
 class HabitabilityCalculator:
     sun_luminosity = 1.
@@ -38,7 +38,7 @@ class HabitabilityCalculator:
         """
         if t_eff < 2600 or t_eff > 7200:
             return None
-        t_star = t_eff - 5700
+        t_star = t_eff - 5780
         # Recent Venus
         s_eff_rv = 1.7763
         a_rv = 1.4335e-4
@@ -48,7 +48,7 @@ class HabitabilityCalculator:
         Seff_rv = self.__seff(s_eff_rv, a_rv, b_rv, c_rv, d_rv, t_star)
         Dis_rv = self.__dis(Seff_rv, luminosity)
         Seff_prime_rv = self.__seff_prime(Seff_rv, self.e)
-        Dis_prime_rv = self.__dis(Seff_prime_rv, t_star)
+        Dis_prime_rv = self.__dis(Seff_prime_rv, luminosity)
         # Runaway Greenhouse
         s_eff_rg = 1.0385
         a_rg = 1.2456e-4
