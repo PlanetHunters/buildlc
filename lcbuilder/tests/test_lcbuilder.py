@@ -121,7 +121,7 @@ class TestsLcBuilder(unittest.TestCase):
 
     def test_build(self):
         lc_build = LcBuilder().build(MissionObjectInfo("TIC 352315023", [13]), "./")
-        self.assertEquals(18107, len(lc_build.lc))
+        self.assertEquals(18140, len(lc_build.lc))
         self.assertEquals(20479, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo("KIC 12557548", [13]), "./")
         self.assertEquals(127850, len(lc_build.lc))
@@ -142,7 +142,7 @@ class TestsLcBuilder(unittest.TestCase):
     def test_binning(self):
         directory = os.path.dirname(__file__) + "/input.csv"
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
-        self.assertEquals(4551, len(lc_build.lc))
+        self.assertEquals(4554, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=2), "./")
         self.assertEquals(2275, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=4), "./")
