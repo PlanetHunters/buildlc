@@ -124,7 +124,7 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertEquals(18140, len(lc_build.lc))
         self.assertEquals(20479, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo("KIC 12557548", [13]), "./")
-        self.assertEquals(127850, len(lc_build.lc))
+        self.assertEquals(126304, len(lc_build.lc))
         self.assertEquals(130290, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
         self.assertEquals(107670, len(lc_build.lc))
@@ -144,7 +144,7 @@ class TestsLcBuilder(unittest.TestCase):
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
         self.assertEquals(4554, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=2), "./")
-        self.assertEquals(2275, len(lc_build.lc))
+        self.assertEquals(2277, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=4), "./")
         self.assertEquals(1137, len(lc_build.lc))
 
