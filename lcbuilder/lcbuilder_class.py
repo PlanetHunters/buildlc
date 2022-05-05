@@ -58,14 +58,14 @@ class LcBuilder:
         flux_err_float = lc_build.lc.flux_err.value
         lc = lightkurve.LightCurve(time=time_float, flux=flux_float, flux_err=flux_err_float)
         lc_df = pandas.DataFrame(columns=['#time', 'flux', 'flux_err'])
-        lc_df['#time'] = numpy.array(time_float)
-        lc_df['flux'] = numpy.array(flux_float)
-        lc_df['flux_err'] = numpy.array(flux_err_float)
+        time_float = numpy.array(time_float)
+        flux_float = numpy.array(flux_float)
+        flux_err_float = numpy.array(flux_err_float)
+        lc_df['#time'] = time_float
+        lc_df['flux'] = flux_float
+        lc_df['flux_err'] = flux_err_float
         lc_df.to_csv(object_dir + "lc.csv", index=False)
         lc = lc.remove_outliers(sigma_lower=float('inf'), sigma_upper=object_info.outliers_sigma)
-        time_float = lc.time.value
-        flux_float = lc.flux.value
-        flux_err_float = lc.flux_err.value
         cadence_array = numpy.diff(time_float) * 24 * 60 * 60
         cadence_array = cadence_array[~numpy.isnan(cadence_array)]
         cadence_array = cadence_array[cadence_array > 0]
