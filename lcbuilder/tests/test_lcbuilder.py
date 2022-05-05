@@ -127,7 +127,7 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertEquals(126304, len(lc_build.lc))
         self.assertEquals(130290, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
-        self.assertEquals(107670, len(lc_build.lc))
+        self.assertEquals(106384, len(lc_build.lc))
         self.assertEquals(116820, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("KIC 12557548", [1]), "./")
         self.assertEquals(1543, len(lc_build.lc))
@@ -146,7 +146,7 @@ class TestsLcBuilder(unittest.TestCase):
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=2), "./")
         self.assertEquals(2277, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=4), "./")
-        self.assertEquals(1137, len(lc_build.lc))
+        self.assertEquals(1138, len(lc_build.lc))
 
 
 if __name__ == '__main__':
