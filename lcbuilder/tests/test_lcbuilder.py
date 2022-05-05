@@ -133,7 +133,7 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertEquals(1543, len(lc_build.lc))
         self.assertEquals(1639, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("EPIC 211945201", [5]), "./")
-        self.assertEquals(3324, len(lc_build.lc))
+        self.assertEquals(3271, len(lc_build.lc))
         self.assertEquals(3663, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("TIC 352315023", [13]), "./")
         self.assertEquals(1222, len(lc_build.lc))
