@@ -45,31 +45,31 @@ class TestsLcBuilder(unittest.TestCase):
 
     def test_short_cadence(self):
         lc_build = LcBuilder().build(MissionObjectInfo("TIC 352315023", 'all'), "./")
-        self.assertEquals(lc_build.cadence, 120)
+        self.assertEqual(lc_build.cadence, 120)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
 
     def test_short_cadence_kic(self):
         lc_build = LcBuilder().build(MissionObjectInfo("KIC 12557548", 'all'), "./")
-        self.assertEquals(lc_build.cadence, 59)
+        self.assertEqual(lc_build.cadence, 59)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_kepler_star_params(lc_build.star_info)
 
     def test_short_cadence_epic(self):
         lc_build = LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
-        self.assertEquals(lc_build.cadence, 59)
+        self.assertEqual(lc_build.cadence, 59)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_k2_star_params(lc_build.star_info)
 
     def test_long_cadence(self):
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("TIC 352315023", 'all'), "./")
-        self.assertEquals(lc_build.cadence, 600)
+        self.assertEqual(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
 
     def test_long_cadence_coords(self):
         lc_build = LcBuilder().build(MissionFfiCoordsObjectInfo(300.47, -71.96, 'all'), "./")
-        self.assertEquals(lc_build.cadence, 600)
+        self.assertEqual(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
 
@@ -121,32 +121,32 @@ class TestsLcBuilder(unittest.TestCase):
 
     def test_build(self):
         lc_build = LcBuilder().build(MissionObjectInfo("TIC 352315023", [13]), "./")
-        self.assertEquals(18140, len(lc_build.lc))
-        self.assertEquals(20479, len(lc_build.lc_data))
+        self.assertEqual(18140, len(lc_build.lc))
+        self.assertEqual(20479, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo("KIC 12557548", [13]), "./")
-        self.assertEquals(126304, len(lc_build.lc))
-        self.assertEquals(130290, len(lc_build.lc_data))
+        self.assertEqual(126304, len(lc_build.lc))
+        self.assertEqual(130290, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo("EPIC 211945201", 'all'), "./")
-        self.assertEquals(106384, len(lc_build.lc))
-        self.assertEquals(116820, len(lc_build.lc_data))
+        self.assertEqual(106384, len(lc_build.lc))
+        self.assertEqual(116820, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("KIC 12557548", [1]), "./")
-        self.assertEquals(1543, len(lc_build.lc))
-        self.assertEquals(1639, len(lc_build.lc_data))
+        self.assertEqual(1543, len(lc_build.lc))
+        self.assertEqual(1639, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("EPIC 211945201", [5]), "./")
-        self.assertEquals(3271, len(lc_build.lc))
-        self.assertEquals(3663, len(lc_build.lc_data))
+        self.assertEqual(3271, len(lc_build.lc))
+        self.assertEqual(3663, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionFfiIdObjectInfo("TIC 352315023", [13]), "./")
-        self.assertEquals(1223, len(lc_build.lc))
-        self.assertEquals(1320, len(lc_build.lc_data))
+        self.assertEqual(1223, len(lc_build.lc))
+        self.assertEqual(1320, len(lc_build.lc_data))
 
     def test_binning(self):
         directory = os.path.dirname(__file__) + "/input.csv"
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
-        self.assertEquals(4554, len(lc_build.lc))
+        self.assertEqual(4554, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=2), "./")
-        self.assertEquals(2277, len(lc_build.lc))
+        self.assertEqual(2277, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=4), "./")
-        self.assertEquals(1138, len(lc_build.lc))
+        self.assertEqual(1138, len(lc_build.lc))
 
 
 if __name__ == '__main__':
