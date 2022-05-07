@@ -22,22 +22,19 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
     - name: Wait for build to succeed
-      uses: fountainhead/action-wait-for-check@v1.0.0
+      timeout-minutes: 15
+      uses: lewagon/wait-on-check-action@v1.0.0
       id: wait-for-build
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        checkName: 'LcBuilder tests'
         ref: ${{ github.ref }}
-        intervalSeconds: 10
-        timeoutSeconds: 900
+        running-workflow-name: 'LcBuilder tests'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 10
+        allowed-conclusions: success
     - name: Build and publish
-      if: steps.wait-for-build.outputs.conclusion == 'success'
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python setup.py sdist bdist_wheel
         twine upload dist/*
-    - name: Fail
-      if: steps.wait-for-build.outputs.conclusion == 'failure' || steps.wait-for-build.outputs.conclusion == 'timed_out'
-      run: exit 1
