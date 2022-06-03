@@ -426,7 +426,7 @@ class LcBuilder:
         clean_flux_err = flux_err
         is_short_cadence = cadence <= 300
         if (object_info.binning > 1) or (object_info.prepare_algorithm) or (is_short_cadence and object_info.smooth_enabled) or (
-                object_info.high_rms_enabled and object_info.initial_mask is None):
+                object_info.high_rms_enabled):
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
             logging.info('================================================')
@@ -443,7 +443,7 @@ class LcBuilder:
         if object_info.prepare_algorithm is not None:
             clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
                                                                                            clean_flux, clean_flux_err)
-        if object_info.high_rms_enabled and object_info.initial_mask is None:
+        if object_info.high_rms_enabled:
             logging.info('Masking high RMS areas by a factor of %.2f with %.1f hours binning',
                          object_info.high_rms_threshold, object_info.high_rms_bin_hours)
             bins_per_day = 24 / object_info.high_rms_bin_hours
