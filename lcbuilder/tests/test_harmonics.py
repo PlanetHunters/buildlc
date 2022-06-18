@@ -44,6 +44,7 @@ class TestsHarmonics(unittest.TestCase):
         assert HarmonicSelector.is_harmonic(1000.0, 999.99, 2, 2)
         assert not HarmonicSelector.is_harmonic(1000.0, 996.99, 2, 2)
         assert not HarmonicSelector.is_harmonic(1000.0, 996.99, 2, 4)
+        assert HarmonicSelector.is_harmonic(1548.2578492081934, 1548.2588680913175, 7.5, 14.999495533860332)
 
 
 if __name__ == '__main__':
