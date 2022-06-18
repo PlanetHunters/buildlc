@@ -28,7 +28,7 @@ setuptools.setup(
                         "scipy==1.8.0",
                         "tess-point==0.6.1",
                         'torch==1.9.0',
-                        "foldedleastsquares==1.0.34",
+                        "foldedleastsquares==1.0.35",
                         "wotan==1.9"
     ]
 )
