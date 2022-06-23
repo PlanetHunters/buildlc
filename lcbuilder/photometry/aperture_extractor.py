@@ -25,7 +25,10 @@ class ApertureExtractor:
         for i in range(0, len(pipeline_mask_triceratops)):
             for j in range(0, len(pipeline_mask_triceratops[0])):
                 if not np.isnan(pipeline_mask_triceratops[i, j]).any():
-                    aperture.append(pipeline_mask_triceratops[i, j])
+                    if isinstance(pipeline_mask_triceratops[i, j], np.ndarray):
+                        aperture.append(pipeline_mask_triceratops[i, j].tolist())
+                    else:
+                        aperture.append(pipeline_mask_triceratops[i, j])
         return aperture
 
     @staticmethod
