@@ -46,7 +46,8 @@ class LcBuilder:
         lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir, caches_root_dir)
         if lc_build.tpf_apertures is not None:
             with open(object_dir + "/apertures.yaml", 'w') as f:
-                apertures = {sector: [aperture.tolist() for aperture in apertures]
+                apertures = {int(sector): [aperture.tolist() if isinstance(aperture, numpy.ndarray) else aperture
+                                      for aperture in apertures]
                              for sector, apertures in lc_build.tpf_apertures.items()}
                 apertures = {"sectors": apertures}
                 f.write(yaml.dump(apertures, default_flow_style=True))
@@ -74,35 +75,12 @@ class LcBuilder:
                                                                              flux_err_float, star_info,
                                                                              lc_build.cadence, object_dir)
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
-        periodogram = self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id, 
+        periodogram = self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id,
                                               object_dir + "/Periodogram_Initial_" + str(sherlock_id) + ".png")
         if object_info.auto_detrend_period is not None:
             lc_build.detrend_period = object_info.auto_detrend_period
         elif object_info.auto_detrend_enabled:
             lc_build.detrend_period = self.__calculate_max_significant_period(lc, periodogram)
-        if object_info.reduce_simple_oscillations:
-            logging.info('================================================')
-            logging.info('STELLAR OSCILLATIONS REDUCTION')
-            logging.info('================================================')
-            flatten_flux = self.__reduce_simple_oscillations(object_dir, object_info.mission_id(), clean_time,
-                                                             flatten_flux, star_info,
-                                                             object_info.oscillation_snr_threshold,
-                                                             object_info.oscillation_amplitude_threshold,
-                                                             object_info.oscillation_ws_scale,
-                                                             object_info.oscillation_min_period,
-                                                             cpus)
-        if lc_build.detrend_period is not None:
-            logging.info('================================================')
-            logging.info('AUTO-DETREND EXECUTION')
-            logging.info('================================================')
-            logging.info("Period = %.3f", lc_build.detrend_period)
-            lc.fold(lc_build.detrend_period).scatter()
-            plt.title("Phase-folded period: " + format(lc_build.detrend_period, ".2f") + " days")
-            plt.savefig(object_dir + "/Phase_detrend_period_" + str(sherlock_id) + "_" +
-                        format(lc_build.detrend_period, ".2f") + "_days.png", bbox_inches='tight')
-            plt.clf()
-            flatten_flux, lc_trend = self.__detrend_by_period(object_info.auto_detrend_method, clean_time, flatten_flux,
-                                                              lc_build.detrend_period * object_info.auto_detrend_ratio)
         if object_info.initial_mask is not None:
             logging.info('================================================')
             logging.info('INITIAL MASKING')
@@ -129,6 +107,29 @@ class LcBuilder:
                 clean_time = clean_time[~mask]
                 flatten_flux = flatten_flux[~mask]
                 clean_flux_err = clean_flux_err[~mask]
+        if object_info.reduce_simple_oscillations:
+            logging.info('================================================')
+            logging.info('STELLAR OSCILLATIONS REDUCTION')
+            logging.info('================================================')
+            flatten_flux = self.__reduce_simple_oscillations(object_dir, object_info.mission_id(), clean_time,
+                                                             flatten_flux, star_info,
+                                                             object_info.oscillation_snr_threshold,
+                                                             object_info.oscillation_amplitude_threshold,
+                                                             object_info.oscillation_ws_scale,
+                                                             object_info.oscillation_min_period,
+                                                             cpus)
+        if lc_build.detrend_period is not None:
+            logging.info('================================================')
+            logging.info('AUTO-DETREND EXECUTION')
+            logging.info('================================================')
+            logging.info("Period = %.3f", lc_build.detrend_period)
+            lc.fold(lc_build.detrend_period).scatter()
+            plt.title("Phase-folded period: " + format(lc_build.detrend_period, ".2f") + " days")
+            plt.savefig(object_dir + "/Phase_detrend_period_" + str(sherlock_id) + "_" +
+                        format(lc_build.detrend_period, ".2f") + "_days.png", bbox_inches='tight')
+            plt.clf()
+            flatten_flux, lc_trend = self.__detrend_by_period(object_info.auto_detrend_method, clean_time, flatten_flux,
+                                                              lc_build.detrend_period * object_info.auto_detrend_ratio)
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
         lc_build.lc = lc
         self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id,
@@ -426,7 +427,7 @@ class LcBuilder:
         clean_flux_err = flux_err
         is_short_cadence = cadence <= 300
         if (object_info.binning > 1) or (object_info.prepare_algorithm) or (is_short_cadence and object_info.smooth_enabled) or (
-                object_info.high_rms_enabled):
+                object_info.high_rms_enabled and object_info.initial_mask is None):
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
             logging.info('================================================')
@@ -443,7 +444,7 @@ class LcBuilder:
         if object_info.prepare_algorithm is not None:
             clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
                                                                                            clean_flux, clean_flux_err)
-        if object_info.high_rms_enabled:
+        if object_info.high_rms_enabled and object_info.initial_mask is None:
             logging.info('Masking high RMS areas by a factor of %.2f with %.1f hours binning',
                          object_info.high_rms_threshold, object_info.high_rms_bin_hours)
             bins_per_day = 24 / object_info.high_rms_bin_hours
