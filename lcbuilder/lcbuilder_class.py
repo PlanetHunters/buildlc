@@ -8,6 +8,8 @@ import numpy
 import pandas
 import yaml
 import multiprocessing
+
+from lcbuilder.constants import ELEANOR_CACHE_DIR, LIGHTKURVE_CACHE_DIR
 from scipy import stats
 from scipy.signal import savgol_filter
 from wotan import flatten
@@ -43,6 +45,14 @@ class LcBuilder:
 
     def build(self, object_info: ObjectInfo, object_dir: str, caches_root_dir=os.path.expanduser('~') + "/",
               cpus=multiprocessing.cpu_count() - 1):
+        if not os.path.exists(caches_root_dir):
+            os.mkdir(caches_root_dir)
+        lightkurve_cache_dir = caches_root_dir + LIGHTKURVE_CACHE_DIR
+        if not os.path.exists(lightkurve_cache_dir):
+            os.mkdir(lightkurve_cache_dir)
+        eleanor_cache_dir = caches_root_dir + ELEANOR_CACHE_DIR
+        if not os.path.exists(eleanor_cache_dir):
+            os.mkdir(eleanor_cache_dir)
         lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir, caches_root_dir)
         if lc_build.tpf_apertures is not None:
             with open(object_dir + "/apertures.yaml", 'w') as f:
