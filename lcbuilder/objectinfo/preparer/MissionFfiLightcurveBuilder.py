@@ -125,6 +125,7 @@ class MissionFfiLightcurveBuilder(LightcurveBuilder):
                     lc = lc.append(datum.to_lightkurve(datum.pca_flux, quality_mask=quality_bitmask).remove_nans()
                                    .flatten())
                 transits_min_count = 2
+        lc = lc.remove_nans()
         return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures)
 
     def extract_eleanor_lc_data(selfself, eleanor_data):
