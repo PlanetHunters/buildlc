@@ -26,7 +26,7 @@ setuptools.setup(
                         "lightkurve==2.2.0",
                         "photutils==1.0.2",
                         "scipy==1.8.0",
-                        "statsmodels==0.12.2"
+                        "statsmodels==0.12.2",
                         "tess-point==0.6.1",
                         'torch==1.9.0',
                         "foldedleastsquares==1.0.35",
