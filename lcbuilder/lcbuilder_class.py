@@ -9,6 +9,8 @@ import pandas
 import yaml
 import multiprocessing
 
+from statsmodels.tsa.stattools import acf
+
 from lcbuilder.constants import ELEANOR_CACHE_DIR, LIGHTKURVE_CACHE_DIR
 from scipy import stats
 from scipy.signal import savgol_filter
@@ -77,16 +79,22 @@ class LcBuilder:
         lc_df['flux_err'] = flux_err_float
         lc_df.to_csv(object_dir + "lc.csv", index=False)
         lc = lc.remove_outliers(sigma_lower=float('inf'), sigma_upper=object_info.outliers_sigma)
+        time_float = lc.time.value
+        flux_float = lc.flux.value
+        flux_err_float = lc.flux_err.value
         cadence_array = numpy.diff(time_float) * 24 * 60 * 60
         cadence_array = cadence_array[~numpy.isnan(cadence_array)]
         cadence_array = cadence_array[cadence_array > 0]
         lc_build.cadence = int(numpy.round(numpy.nanmedian(cadence_array)))
-        clean_time, flatten_flux, clean_flux_err = self.__clean_initial_flux(object_info, time_float, flux_float,
-                                                                             flux_err_float, star_info,
-                                                                             lc_build.cadence, object_dir)
-        lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
+        lc = self.__clean_initial_flux(object_info, time_float, flux_float, flux_err_float, star_info,
+                                       lc_build.cadence, object_dir)
+        clean_time = lc.time.value
+        flatten_flux = lc.flux.value
+        clean_flux_err = lc.flux_err.value
         periodogram = self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id,
                                               object_dir + "/Periodogram_Initial_" + str(sherlock_id) + ".png")
+        self.__plot_autocorrelation(lc, lc_build.cadence, sherlock_id,
+                                    object_dir + "/Autocorrelation_Initial_" + str(sherlock_id) + ".png")
         if object_info.auto_detrend_period is not None:
             lc_build.detrend_period = object_info.auto_detrend_period
         elif object_info.auto_detrend_enabled:
@@ -144,7 +152,22 @@ class LcBuilder:
         lc_build.lc = lc
         self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id,
                                 object_dir + "/Periodogram_Final_" + str(sherlock_id) + ".png")
+        self.__plot_autocorrelation(lc, lc_build.cadence, sherlock_id,
+                                    object_dir + "/Autocorrelation_Final_" + str(sherlock_id) + ".png")
         return lc_build
+
+    def __plot_autocorrelation(self, lc, cadence_s, object_id, filename, max_days=5):
+        nlags = int(max_days / (cadence_s / 60 / 60 / 24))
+        correlation = acf(lc.flux.value, nlags=nlags)
+        lags = numpy.linspace(0, max_days, len(correlation))
+        fig, axs = plt.subplots(1, 1, figsize=(8, 4), constrained_layout=True)
+        axs.set_ylabel("Autocorrelation")
+        axs.set_xlabel("Time lags (d)")
+        axs.set_title(object_id + " Autocorrelation")
+        axs.plot(lags, correlation, color="blue")
+        plt.savefig(filename)
+        plt.clf()
+        plt.close()
 
     def __plot_periodogram(self, lc, min_period, max_period, oversample, object_id, filename):
         periodogram = lc.to_periodogram(minimum_period=min_period, maximum_period=max_period,
@@ -436,6 +459,7 @@ class LcBuilder:
         clean_flux = flux
         clean_flux_err = flux_err
         is_short_cadence = cadence <= 300
+        lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
         if (object_info.binning > 1) or (object_info.prepare_algorithm) or (is_short_cadence and object_info.smooth_enabled) or (
                 object_info.high_rms_enabled and object_info.initial_mask is None):
             logging.info('================================================')
@@ -443,17 +467,25 @@ class LcBuilder:
             logging.info('================================================')
         if object_info.binning > 1:
             bins = len(time) / object_info.binning
+            bin_edges_for_time = numpy.arange(time[0], time[-1], (cadence / 24 / 60 / 60) * object_info.binning)
             bin_means, bin_edges, binnumber = stats.binned_statistic(time, flux, statistic='mean',
-                                                                     bins=bins)
-            bin_stds, _, _ = stats.binned_statistic(time, flux, statistic='std', bins=bins)
+                                                                     bins=bin_edges_for_time)
+            bin_stds, _, _ = stats.binned_statistic(time, flux, statistic='std', bins=bin_edges_for_time)
             bin_width = (bin_edges[1] - bin_edges[0])
             bin_centers = bin_edges[1:] - bin_width / 2
             clean_time = bin_centers
             clean_flux = bin_means
             clean_flux_err = bin_stds
+            lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
+            lc = lc.remove_nans()
         if object_info.prepare_algorithm is not None:
-            clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(object_info, clean_time,
-                                                                                           clean_flux, clean_flux_err)
+            clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(
+                object_info, lc.time.value, lc.flux.value, lc.flux_err.value)
+            lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
+            lc = lc.remove_nans()
+        clean_time = lc.time.value
+        clean_flux = lc.flux.value
+        clean_flux_err = lc.flux_err.value
         if object_info.high_rms_enabled and object_info.initial_mask is None:
             logging.info('Masking high RMS areas by a factor of %.2f with %.1f hours binning',
                          object_info.high_rms_threshold, object_info.high_rms_bin_hours)
@@ -472,8 +504,8 @@ class LcBuilder:
                 flux_partial = clean_flux[previous_jump_index:jumpIndex]
                 before_flux_partial = before_flux[previous_jump_index:jumpIndex]
                 bins = (time_partial[len(time_partial) - 1] - time_partial[1]) * bins_per_day
-                bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial[1:], flux_partial[1:], statistic='std',
-                                                                        bins=bins)
+                bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial[1:], flux_partial[1:],
+                                                                        statistic='std', bins=bins)
                 stds_median = numpy.nanmedian(bin_stds[bin_stds > 0])
                 stds_median_array = numpy.full(len(bin_stds), stds_median)
                 rms_threshold_array = stds_median_array * object_info.high_rms_threshold
@@ -496,10 +528,12 @@ class LcBuilder:
             clean_time = clean_time[~entire_high_rms_mask]
             clean_flux = clean_flux[~entire_high_rms_mask]
             clean_flux_err = clean_flux_err[~entire_high_rms_mask]
+            lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
+            lc = lc.remove_nans()
         if is_short_cadence and object_info.smooth_enabled:
             # logging.info('Applying Smooth phase (savgol + weighted average)')
             logging.info('Applying Smooth phase (savgol)')
-            clean_flux = self.smooth(clean_flux)
+            clean_flux = self.smooth(lc.flux.value)
             # TODO to use convolve we need to remove the borders effect
             # clean_flux = np.convolve(clean_flux, [0.025, 0.05, 0.1, 0.155, 0.34, 0.155, 0.1, 0.05, 0.025], "same")
             # clean_flux = np.convolve(clean_flux, [0.025, 0.05, 0.1, 0.155, 0.34, 0.155, 0.1, 0.05, 0.025], "same")
@@ -507,7 +541,9 @@ class LcBuilder:
             # clean_flux[len(clean_flux) - 6: len(clean_flux) - 1] = 1
             # clean_flux = uniform_filter1d(clean_flux, 11)
             # clean_flux = self.flatten_bw(self.FlattenInput(clean_time, clean_flux, 0.02))[0]
-        return clean_time, clean_flux, clean_flux_err
+            lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
+            lc = lc.remove_nans()
+        return lc
 
     def __plot_rms_mask(self, object_id, rms_bin_hours, bin_centers, bin_stds, rms_threshold_array, rms_mask,
                         time, flux, filename, object_dir):
