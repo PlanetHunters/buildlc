@@ -12,7 +12,7 @@ class LcbuilderHelper:
         time_span_curve = time[-1] - time[0]
         dif = time[1:] - time[:-1]
         jumps = np.where(dif > 1)[0]
-        jumps = np.append(jumps, len(time))
+        jumps = np.append(jumps, len(time) - 1)
         previous_jump_index = 0
         time_span_all_sectors = 0
         empty_days = 0
@@ -24,7 +24,8 @@ class LcbuilderHelper:
             oversampling = oversampling if oversampling > 3 else 3
         for jumpIndex in jumps:
             time_chunk = time[previous_jump_index + 1:jumpIndex]  # ignoring first measurement as could be the last from the previous chunk
-            time_span_all_sectors = time_span_all_sectors + (time_chunk[-1] - time_chunk[0])
+            if len(time_chunk) > 0:
+                time_span_all_sectors = time_span_all_sectors + (time_chunk[-1] - time_chunk[0])
             previous_jump_index = jumpIndex
         return DefaultTransitTemplateGenerator() \
             .period_grid(star_info.radius, star_info.mass, time_span_curve, min_period,
