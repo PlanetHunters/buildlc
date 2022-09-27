@@ -17,6 +17,7 @@ class LightcurveBuilder(ABC):
     MISSION_ID_KEPLER = "KIC"
     MISSION_ID_KEPLER_2 = "EPIC"
     MISSION_ID_TESS = "TIC"
+    ELEANOR_AUTHOR = "ELEANOR"
 
     def __init__(self):
         self.star_catalogs = {}
