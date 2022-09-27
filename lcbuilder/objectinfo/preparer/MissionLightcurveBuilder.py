@@ -38,7 +38,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         if mission_prefix not in self.star_catalogs:
             raise ValueError("Wrong object id " + mission_id)
         cadence = object_info.cadence if object_info.cadence is not None else "short"
-        author = object_info.author if object_info.author is not None else self.authors[mission]
+        author_extension = '_long' if cadence >= 600 and mission == constants.MISSION_TESS else ''
+        author = object_info.author if object_info.author is not None else self.authors[mission + author_extension]
         logging.info("Downloading lightcurve files...")
         sectors = None if object_info.sectors == 'all' or mission != constants.MISSION_TESS else object_info.sectors
         campaigns = None if object_info.sectors == 'all' or mission != constants.MISSION_K2 else object_info.sectors
@@ -56,7 +57,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         if not os.path.exists(tpfs_dir):
             os.mkdir(tpfs_dir)
         if object_info.apertures is None:
-            if cadence >= 600 and mission_prefix == self.MISSION_ID_TESS and author == self.ELEANOR_AUTHOR:
+            if cadence >= 600 and mission_prefix == constants.MISSION_ID_TESS and author == constants.ELEANOR_AUTHOR:
                 source = "eleanor"
                 if object_info.ra is not None and object_info.dec is not None:
                     coords = SkyCoord(ra=object_info.ra, dec=object_info.dec, unit=(u.deg, u.deg))
@@ -78,7 +79,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                         .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
                                       cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
                     star_info = starinfo.StarInfo(object_info.sherlock_id(),
-                                                  *self.star_catalogs[self.MISSION_ID_TESS]
+                                                  *self.star_catalogs[constants.MISSION_ID_TESS]
                                                   .catalog_info(int(star[0].tic)))
                 data = []
                 for s in star:
@@ -105,7 +106,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 if object_info.ra is not None and object_info.dec is not None:
                     target_name = str(object_info.ra) + ' ' + str(object_info.dec)
                     star_info = starinfo.StarInfo(sherlock_id,
-                                                  *self.star_catalogs[self.MISSION_ID_TESS].coords_catalog_info(
+                                                  *self.star_catalogs[constants.MISSION_ID_TESS].coords_catalog_info(
                                                       object_info.ra, object_info.dec))
                 else:
                     star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
@@ -126,11 +127,11 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 matching_objects = []
                 for tpf in tpfs:
                     shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
-                    if mission_prefix == self.MISSION_ID_KEPLER:
+                    if mission_prefix == constants.MISSION_ID_KEPLER:
                         sector = tpf.quarter
-                    elif mission_prefix == self.MISSION_ID_TESS:
+                    elif mission_prefix == constants.MISSION_ID_TESS:
                         sector = tpf.sector
-                    if mission_prefix == self.MISSION_ID_KEPLER_2:
+                    if mission_prefix == constants.MISSION_ID_KEPLER_2:
                         sector = tpf.campaign
                     apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
                 for i in range(0, len(lcf.data)):
@@ -153,11 +154,11 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                                      ", cadence " + str(cadence) + "s and sectors " + str(tokens))
                 lc = lc.remove_nans()
                 transits_min_count = self.__calculate_transits_min_count(len(lcf))
-                if mission_prefix == self.MISSION_ID_KEPLER:
+                if mission_prefix == constants.MISSION_ID_KEPLER:
                     sectors = [lcfile.quarter for lcfile in lcf]
-                elif mission_prefix == self.MISSION_ID_TESS:
+                elif mission_prefix == constants.MISSION_ID_TESS:
                     sectors = [file.sector for file in lcf]
-                elif mission_prefix == self.MISSION_ID_KEPLER_2:
+                elif mission_prefix == constants.MISSION_ID_KEPLER_2:
                     logging.info("Correcting K2 motion in light curve...")
                     sectors = [lcfile.campaign for lcfile in lcf]
                     lc = lc.to_corrector("sff").correct(windows=20)
@@ -174,18 +175,18 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             lc = None
             for tpf in tpfs:
                 shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
-                if mission_prefix == self.MISSION_ID_KEPLER:
+                if mission_prefix == constants.MISSION_ID_KEPLER:
                     sector = tpf.quarter
-                elif mission_prefix == self.MISSION_ID_TESS:
+                elif mission_prefix == constants.MISSION_ID_TESS:
                     sector = tpf.sector
-                elif mission_prefix == self.MISSION_ID_KEPLER_2:
+                elif mission_prefix == constants.MISSION_ID_KEPLER_2:
                     sector = tpf.campaign
                 boolean_aperture = ApertureExtractor.from_pixels_to_boolean_mask(apertures[sector], tpf.column, tpf.row,
                                                                          CUTOUT_SIZE, CUTOUT_SIZE)
                 tpf.plot(aperture_mask=boolean_aperture, mask_color='red')
                 plt.savefig(sherlock_dir + "/fov/Aperture_[" + str(sector) + "].png")
                 plt.close()
-                if mission_prefix == self.MISSION_ID_KEPLER:
+                if mission_prefix == constants.MISSION_ID_KEPLER:
                     corrector = lk.KeplerCBVCorrector(tpf)
                     corrector.plot_cbvs([1, 2, 3, 4, 5, 6, 7])
                     raw_lc = tpf.to_lightcurve(aperture_mask=boolean_aperture).remove_nans()
@@ -196,14 +197,14 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     it_lc.plot(ax=ax, color='C2', label='CBV Corrected SAP Flux', linestyle='-')
                     plt.savefig(sherlock_dir + "/Raw_vs_CBVcorrected_lc[" + str(sector) + "].png")
                     plt.close()
-                elif mission_prefix == self.MISSION_ID_KEPLER_2:
+                elif mission_prefix == constants.MISSION_ID_KEPLER_2:
                     raw_lc = tpf.to_lightcurve(aperture_mask=boolean_aperture).remove_nans()
                     it_lc = raw_lc.to_corrector("sff").correct(windows=20)
                     ax = raw_lc.plot(color='C3', label='SAP Flux', linestyle='-')
                     it_lc.plot(ax=ax, color='C2', label='CBV Corrected SAP Flux', linestyle='-')
                     plt.savefig(sherlock_dir + "/Raw_vs_SFFcorrected_lc[" + str(sector) + "].png")
                     plt.close()
-                elif mission_prefix == self.MISSION_ID_TESS:
+                elif mission_prefix == constants.MISSION_ID_TESS:
                     temp_lc = tpf.to_lightcurve(aperture_mask=boolean_aperture)
                     where_are_NaNs = np.isnan(temp_lc.flux)
                     temp_lc = temp_lc[np.where(~where_are_NaNs)]
@@ -237,11 +238,11 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             plt.savefig(sherlock_dir + "/Normalized_lc[" + str(sector) + "].png")
             plt.close()
             transits_min_count = self.__calculate_transits_min_count(len(tpfs))
-            if mission_prefix == self.MISSION_ID_KEPLER or mission_id == self.MISSION_ID_KEPLER_2:
+            if mission_prefix == constants.MISSION_ID_KEPLER or mission_id == constants.MISSION_ID_KEPLER_2:
                 sectors = [lcfile.quarter for lcfile in tpfs]
-            elif mission_prefix == self.MISSION_ID_TESS:
+            elif mission_prefix == constants.MISSION_ID_TESS:
                 sectors = [file.sector for file in tpfs]
-            if mission_prefix == self.MISSION_ID_KEPLER_2:
+            if mission_prefix == constants.MISSION_ID_KEPLER_2:
                 logging.info("Correcting K2 motion in light curve...")
                 sectors = [lcfile.campaign for lcfile in tpfs]
             sectors = None if sectors is None else np.unique(sectors)
@@ -251,7 +252,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
     def __calculate_transits_min_count(self, len_data):
         return 1 if len_data == 1 else 2
 
-    def extract_eleanor_lc_data(selfself, eleanor_data):
+    def extract_eleanor_lc_data(self, eleanor_data):
         time = []
         flux = []
         flux_err = []

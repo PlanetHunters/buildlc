@@ -14,20 +14,17 @@ from lcbuilder.star.TicStarCatalog import TicStarCatalog
 class LightcurveBuilder(ABC):
     OBJECT_ID_REGEX = "^(KIC|TIC|EPIC)[-_ ]([0-9]+)$"
     NUMBERS_REGEX = "[0-9]+$"
-    MISSION_ID_KEPLER = "KIC"
-    MISSION_ID_KEPLER_2 = "EPIC"
-    MISSION_ID_TESS = "TIC"
-    ELEANOR_AUTHOR = "ELEANOR"
 
     def __init__(self):
         self.star_catalogs = {}
-        self.star_catalogs[self.MISSION_ID_KEPLER] = KicStarCatalog()
-        self.star_catalogs[self.MISSION_ID_KEPLER_2] = EpicStarCatalog()
-        self.star_catalogs[self.MISSION_ID_TESS] = TicStarCatalog()
+        self.star_catalogs[constants.MISSION_ID_KEPLER] = KicStarCatalog()
+        self.star_catalogs[constants.MISSION_ID_KEPLER_2] = EpicStarCatalog()
+        self.star_catalogs[constants.MISSION_ID_TESS] = TicStarCatalog()
         self.authors = {}
         self.authors[constants.MISSION_KEPLER] = constants.MISSION_KEPLER
         self.authors[constants.MISSION_K2] = constants.MISSION_K2
-        self.authors[constants.MISSION_TESS] = "SPOC"
+        self.authors[constants.MISSION_TESS] = constants.SPOC_AUTHOR
+        self.authors[constants.MISSION_TESS + "_long"] = constants.ELEANOR_AUTHOR
 
     @abstractmethod
     def build(self, object_info, sherlock_dir, caches_root_dir):
@@ -35,23 +32,23 @@ class LightcurveBuilder(ABC):
 
     def parse_object_id(self, object_id):
         if object_id is None:
-            return constants.MISSION_TESS, self.MISSION_ID_TESS, None
+            return constants.MISSION_TESS, constants.MISSION_ID_TESS, None
         object_id_parsed = re.search(self.OBJECT_ID_REGEX, object_id)
         if object_id_parsed is None:
             return None, None, None
         mission_prefix = object_id[object_id_parsed.regs[1][0]:object_id_parsed.regs[1][1]]
         id = object_id[object_id_parsed.regs[2][0]:object_id_parsed.regs[2][1]]
-        if mission_prefix == self.MISSION_ID_KEPLER:
+        if mission_prefix == constants.MISSION_ID_KEPLER:
             mission = constants.MISSION_KEPLER
-        elif mission_prefix == self.MISSION_ID_KEPLER_2:
+        elif mission_prefix == constants.MISSION_ID_KEPLER_2:
             mission = constants.MISSION_K2
-        elif mission_prefix == self.MISSION_ID_TESS:
+        elif mission_prefix == constants.MISSION_ID_TESS:
             mission = constants.MISSION_TESS
         else:
             mission = None
         return mission, mission_prefix, int(id)
 
-    def extract_lc_data(selfself, lcf):
+    def extract_lc_data(self, lcf):
         fit_files = [astropy_fits.open(lcf.filename) for lcf in lcf]
         time = []
         flux = []
