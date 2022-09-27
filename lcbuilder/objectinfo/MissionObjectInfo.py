@@ -5,17 +5,19 @@ class MissionObjectInfo(ObjectInfo):
     """
     Implementation of ObjectInfo to be used to characterize short-cadence objects from TESS, Kepler and K2 missions.
     """
-    def __init__(self, mission_id: str, sectors, author=None, cadence=None, initial_mask=None,
+    def __init__(self, sectors, mission_id: str = None, ra=None, dec=None, author=None, cadence=None, initial_mask=None,
                  initial_transit_mask=None, star_info=None, apertures=None,
                  outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
-                 oscillation_min_period=0.002, oscillation_max_period=0.001, binning=1):
+                 oscillation_min_period=0.002, oscillation_max_period=0.001, binning=1, eleanor_corr_flux="pca_flux"):
         """
-        @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
         @param sectors: an array of integers specifying which sectors will be analysed for the object
+        @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
+        @param ra: the right ascension of the target.
+        @param dec: the declination of the target.
         @param initial_mask: an array of time ranges provided to mask them into the initial object light curve.
         @param star_info: input star information
         @param apertures: the aperture pixels [col, row] per sector as a dictionary.
@@ -37,6 +39,7 @@ class MissionObjectInfo(ObjectInfo):
         @param oscillation_min_period: minimum period to be computed in the oscillations periodogram
         @param oscillation_max_period: maximum period to be computed in the oscillations periodogram
         @param binning: the number of cadences to be binned together
+        @param eleanor_corr_flux the corrected flux name to be used from ELEANOR
         """
         super().__init__(initial_mask, initial_transit_mask, star_info, apertures,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
@@ -45,12 +48,23 @@ class MissionObjectInfo(ObjectInfo):
                          oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
                          oscillation_max_period, binning)
         self.id = mission_id
+        self.ra = ra
+        self.dec = dec
         self.sectors = sectors
         self.cadence = cadence
         self.author = author
+        self.eleanor_corr_flux = eleanor_corr_flux
 
     def sherlock_id(self):
-        return self.id.replace(" ", "") + "_" + str(self.sectors)
+        sherlock_id = None
+        if self.ra is not None and self.dec is not None:
+            sherlock_id = str(self.ra) + "_" + str(self.dec) + "_FFI_" + str(self.sectors)
+        else:
+            sherlock_id = self.id.replace(" ", "") + "_" + str(self.sectors)
+        return sherlock_id
 
     def mission_id(self):
-        return self.id
+        mission_id = self.id
+        if self.ra is not None and self.dec is not None:
+            mission_id = None
+        return mission_id
