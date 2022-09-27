@@ -4,7 +4,7 @@ from lcbuilder.lcbuilder_class import LcBuilder
 from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
 from lcbuilder.objectinfo.MissionInputObjectInfo import MissionInputObjectInfo
 from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
-
+from lcbuilder import constants
 
 class TestsLcBuilder(unittest.TestCase):
     def test_build_object_info(self):
@@ -35,7 +35,6 @@ class TestsLcBuilder(unittest.TestCase):
         object_info = lcbuilder.build_object_info(target_name, None, sectors, file, cadence, None, None, None, None, None)
         assert object_info.mission_id() is None and object_info.sherlock_id() == "INP_" + os.path.splitext(file)[0].replace("/", "_")
 
-
     def test_short_cadence(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120), "./")
         self.assertEqual(lc_build.cadence, 120)
@@ -60,13 +59,21 @@ class TestsLcBuilder(unittest.TestCase):
         self.__test_k2_star_params(lc_build.star_info)
 
     def test_long_cadence(self):
-        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=600, author="ELEANOR"), "./")
+        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=600,
+                                                       author=constants.ELEANOR_AUTHOR), "./")
         self.assertEqual(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
 
+    def test_long_cadence_other_author(self):
+        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 192833836", cadence=600,
+                                                       author=constants.TESS_SPOC_AUTHOR), "./")
+        self.assertEqual(lc_build.cadence, 600)
+        self.assertGreater(len(lc_build.lc), 0)
+
     def test_long_cadence_coords(self):
-        lc_build = LcBuilder().build(MissionObjectInfo('all', ra=300.47, dec=-71.96, cadence=600, author="ELEANOR"),
+        lc_build = LcBuilder().build(MissionObjectInfo('all', ra=300.47, dec=-71.96, cadence=600,
+                                                       author=constants.ELEANOR_AUTHOR),
                                      "./")
         self.assertEqual(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
@@ -119,7 +126,8 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertAlmostEqual(star_info.dec, 19.402252, 3)
 
     def test_build(self):
-        lc_build = LcBuilder().build(MissionObjectInfo([13], "TIC 352315023", cadence=1800, author="ELEANOR"), "./")
+        lc_build = LcBuilder().build(MissionObjectInfo([13], "TIC 352315023", cadence=1800,
+                                                       author=constants.ELEANOR_AUTHOR), "./")
         self.assertEqual(1222, len(lc_build.lc))
         self.assertEqual(1320, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo([13], "TIC 352315023", cadence=120), "./")
