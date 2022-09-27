@@ -21,12 +21,9 @@ from lcbuilder.helper import LcbuilderHelper
 from lcbuilder.star.starinfo import StarInfo
 
 from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
-from lcbuilder.objectinfo.MissionFfiCoordsObjectInfo import MissionFfiCoordsObjectInfo
-from lcbuilder.objectinfo.MissionFfiIdObjectInfo import MissionFfiIdObjectInfo
 from lcbuilder.objectinfo.MissionInputObjectInfo import MissionInputObjectInfo
 from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
 from lcbuilder.objectinfo.ObjectInfo import ObjectInfo
-from lcbuilder.objectinfo.preparer.MissionFfiLightcurveBuilder import MissionFfiLightcurveBuilder
 from lcbuilder.objectinfo.preparer.MissionInputLightcurveBuilder import MissionInputLightcurveBuilder
 from lcbuilder.objectinfo.preparer.MissionLightcurveBuilder import MissionLightcurveBuilder
 import matplotlib.pyplot as plt
@@ -41,9 +38,7 @@ class LcBuilder:
     def __init__(self) -> None:
         self.lightcurve_builders = {InputObjectInfo: MissionInputLightcurveBuilder(),
                                     MissionInputObjectInfo: MissionInputLightcurveBuilder(),
-                                    MissionObjectInfo: MissionLightcurveBuilder(),
-                                    MissionFfiIdObjectInfo: MissionFfiLightcurveBuilder(),
-                                    MissionFfiCoordsObjectInfo: MissionFfiLightcurveBuilder()}
+                                    MissionObjectInfo: MissionLightcurveBuilder()}
 
     def build(self, object_info: ObjectInfo, object_dir: str, caches_root_dir=os.path.expanduser('~') + "/",
               cpus=multiprocessing.cpu_count() - 1):
@@ -597,24 +592,18 @@ class LcBuilder:
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
-        if mission is not None and file is None and cadence <= 300:
-            return MissionObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
+        if (mission is not None or coords is not None) and file is None:
+            return MissionObjectInfo(sectors, target_name,
+                                     coords[0] if coords is not None else None,
+                                     coords[1] if coords is not None else None, author, cadence, initial_mask,
+                                     initial_transit_mask,
                                      star_info, aperture, outliers_sigma, high_rms_enabled,
                                      high_rms_threshold, high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
                                      auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                      reduce_simple_oscillations, oscillation_snr_threshold,
                                      oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
-                                     oscillation_max_period, binning
+                                     oscillation_max_period, binning, eleanor_corr_flux
                                      )
-        elif mission is not None and file is None and cadence > 300:
-            return MissionFfiIdObjectInfo(target_name, sectors, author, cadence, initial_mask, initial_transit_mask,
-                                          star_info, aperture, eleanor_corr_flux,
-                                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
-                                          smooth_enabled, auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio,
-                                          auto_detrend_period, prepare_algorithm,
-                                          reduce_simple_oscillations, oscillation_snr_threshold,
-                                          oscillation_amplitude_threshold, oscillation_ws_scale,
-                                          oscillation_min_period, oscillation_max_period, binning)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
@@ -623,16 +612,6 @@ class LcBuilder:
                                           reduce_simple_oscillations, oscillation_snr_threshold,
                                           oscillation_amplitude_threshold, oscillation_ws_scale,
                                           oscillation_min_period, oscillation_max_period, binning)
-        elif mission is None and coords is not None and cadence > 300:
-            return MissionFfiCoordsObjectInfo(coords[0], coords[1], sectors, author, cadence, initial_mask,
-                                              initial_transit_mask, star_info, aperture,
-                                              eleanor_corr_flux, outliers_sigma, high_rms_enabled, high_rms_threshold,
-                                              high_rms_bin_hours, smooth_enabled, auto_detrend_enabled,
-                                              auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
-                                              prepare_algorithm,
-                                              reduce_simple_oscillations, oscillation_snr_threshold,
-                                              oscillation_amplitude_threshold, oscillation_ws_scale,
-                                              oscillation_min_period, oscillation_max_period, binning)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
