@@ -6,7 +6,7 @@ import pandas
 import numpy as np
 from astropy.coordinates import SkyCoord
 import eleanor
-from lcbuilder.eleanor.targetdata import TargetData
+from eleanor.targetdata import TargetData
 from lcbuilder import constants
 from lcbuilder.LcBuild import LcBuild
 from lcbuilder.constants import CUTOUT_SIZE, LIGHTKURVE_CACHE_DIR, ELEANOR_CACHE_DIR
