@@ -1,15 +1,10 @@
 import logging
 import re
 import shutil
-import sys
-
 import pandas
 
-import lcbuilder.eleanor
 import numpy as np
 from astropy.coordinates import SkyCoord
-
-sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
 import eleanor
 from lcbuilder.eleanor.targetdata import TargetData
 from lcbuilder import constants
