@@ -22,6 +22,7 @@ setuptools.setup(
     python_requires='>=3.8',
     install_requires=['numpy==1.22.3',
                         'astropy==5.0.4',
+                        'eleanor==2.0.5',
                         'pandas==1.3.1',
                         "lightkurve==2.2.0",
                         "photutils==1.0.2",
