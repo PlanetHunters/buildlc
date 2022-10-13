@@ -1,6 +1,9 @@
 import os
 import shutil
 import traceback
+import sys
+import lcbuilder.eleanor
+sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
 import eleanor
 from eleanor.maxsector import maxsector
 

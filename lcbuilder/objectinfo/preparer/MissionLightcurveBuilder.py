@@ -1,12 +1,17 @@
 import logging
 import re
 import shutil
+
 import pandas
+
+import sys
+import lcbuilder.eleanor
+sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
+import eleanor
+from lcbuilder.eleanor.targetdata import TargetData
 
 import numpy as np
 from astropy.coordinates import SkyCoord
-import eleanor
-from eleanor.targetdata import TargetData
 from lcbuilder import constants
 from lcbuilder.LcBuild import LcBuild
 from lcbuilder.constants import CUTOUT_SIZE, LIGHTKURVE_CACHE_DIR, ELEANOR_CACHE_DIR
