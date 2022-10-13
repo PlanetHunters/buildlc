@@ -57,7 +57,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         if not os.path.exists(tpfs_dir):
             os.mkdir(tpfs_dir)
         if object_info.apertures is None:
-            if cadence >= 600 and mission_prefix == constants.MISSION_ID_TESS and author == constants.ELEANOR_AUTHOR:
+            if isinstance(cadence, (int, float)) and cadence >= 600 and \
+                    mission_prefix == constants.MISSION_ID_TESS and author == constants.ELEANOR_AUTHOR:
                 source = "eleanor"
                 if object_info.ra is not None and object_info.dec is not None:
                     coords = SkyCoord(ra=object_info.ra, dec=object_info.dec, unit=(u.deg, u.deg))
