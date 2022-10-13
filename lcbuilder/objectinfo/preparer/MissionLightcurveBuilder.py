@@ -33,7 +33,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         if mission_prefix not in self.star_catalogs:
             raise ValueError("Wrong object id " + mission_id)
         cadence = object_info.cadence if object_info.cadence is not None else "short"
-        author_extension = '_long' if cadence >= 600 and mission == constants.MISSION_TESS else ''
+        author_extension = '_long' if isinstance(cadence, (int, float)) and cadence >= 600 and mission == constants.MISSION_TESS else ''
         author = object_info.author if object_info.author is not None else self.authors[mission + author_extension]
         logging.info("Downloading lightcurve files...")
         sectors = None if object_info.sectors == 'all' or mission != constants.MISSION_TESS else object_info.sectors
