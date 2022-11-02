@@ -1,11 +1,23 @@
 import numpy as np
 from foldedleastsquares import DefaultTransitTemplateGenerator
 from lcbuilder import constants
-
+from scipy import stats
 
 class LcbuilderHelper:
     def __init__(self) -> None:
         super().__init__()
+
+    @staticmethod
+    def bin(time, values, bins, range=0):
+        bin_means, bin_edges, binnumber = stats.binned_statistic(time, values, statistic='mean', bins=bins)
+        bin_stds, _, _ = stats.binned_statistic(time, values, statistic='std', bins=bins)
+        bin_width = (bin_edges[1] - bin_edges[0])
+        bin_centers = bin_edges[1:] - bin_width / 2
+        bin_means_data_mask = np.isnan(bin_means)
+        bin_centers = bin_centers[~bin_means_data_mask]
+        bin_means = bin_means[~bin_means_data_mask],
+        bin_stds = bin_stds[~bin_means_data_mask]
+        return bin_centers, bin_means, bin_width, bin_stds
 
     @staticmethod
     def calculate_period_grid(time, min_period, max_period, oversampling, star_info, transits_min_count,
