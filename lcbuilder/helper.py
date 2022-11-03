@@ -15,7 +15,7 @@ class LcbuilderHelper:
         bin_centers = bin_edges[1:] - bin_width / 2
         bin_means_data_mask = np.isnan(bin_means)
         bin_centers = bin_centers[~bin_means_data_mask]
-        bin_means = bin_means[~bin_means_data_mask],
+        bin_means = bin_means[~bin_means_data_mask]
         bin_stds = bin_stds[~bin_means_data_mask]
         return bin_centers, bin_means, bin_width, bin_stds
 
