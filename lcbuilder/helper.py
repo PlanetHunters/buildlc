@@ -4,6 +4,7 @@ from foldedleastsquares import DefaultTransitTemplateGenerator
 from lcbuilder import constants
 from scipy import stats
 
+
 class LcbuilderHelper:
     def __init__(self) -> None:
         super().__init__()
@@ -27,9 +28,16 @@ class LcbuilderHelper:
         return result
 
     @staticmethod
-    def bin(time, values, bins, range=0):
+    def bin(time, values, bins, values_err=None, bin_err_mode='values_std'):
+        if len(time) <= bins:
+            value_err = values_err if values_err is not None else np.nanstd(values)
+            time_err = (time[1] - time[0]) if len(time) > 1 else np.nan
+            return time, values, time_err, value_err
         bin_means, bin_edges, binnumber = stats.binned_statistic(time, values, statistic='mean', bins=bins)
-        bin_stds, _, _ = stats.binned_statistic(time, values, statistic='std', bins=bins)
+        if bin_err_mode == 'flux_err':
+            bin_stds, _, _ = stats.binned_statistic(time, values_err, statistic='mean', bins=bins)
+        else:
+            bin_stds, _, _ = stats.binned_statistic(time, values, statistic='std', bins=bins)
         bin_width = (bin_edges[1] - bin_edges[0])
         bin_centers = bin_edges[1:] - bin_width / 2
         bin_means_data_mask = np.isnan(bin_means)
