@@ -1,3 +1,4 @@
+import foldedleastsquares
 import numpy as np
 from foldedleastsquares import DefaultTransitTemplateGenerator
 from lcbuilder import constants
@@ -6,6 +7,24 @@ from scipy import stats
 class LcbuilderHelper:
     def __init__(self) -> None:
         super().__init__()
+
+    @staticmethod
+    def mask_transits(time, flux, period, duration, epoch, flux_err=None):
+        mask = foldedleastsquares.transit_mask(time, period, duration, epoch)
+        time = time[~mask]
+        flux = flux[~mask]
+        if flux_err is not None:
+            flux_err = flux_err[~mask]
+        return time, flux, flux_err
+
+    @staticmethod
+    def correct_epoch(mission, epoch):
+        result = epoch
+        if mission == constants.MISSION_TESS and epoch - constants.TBJD > 0:
+            result = epoch - constants.TBJD
+        elif (mission == constants.MISSION_K2 or mission == constants.MISSION_KEPLER) and epoch - constants.KBJD > 0:
+            result = epoch - constants.TBJD
+        return result
 
     @staticmethod
     def bin(time, values, bins, range=0):
