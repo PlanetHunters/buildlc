@@ -54,7 +54,7 @@ class LcBuilder:
         if lc_build.tpf_apertures is not None:
             with open(object_dir + "/apertures.yaml", 'w') as f:
                 apertures = {int(sector): [aperture.tolist() if isinstance(aperture, numpy.ndarray) else aperture
-                                      for aperture in apertures]
+                                           for aperture in apertures]
                              for sector, apertures in lc_build.tpf_apertures.items()}
                 apertures = {"sectors": apertures}
                 f.write(yaml.dump(apertures, default_flow_style=True))
@@ -287,7 +287,7 @@ class LcBuilder:
             transit_period_min = 0.3
             transit_period_max = 2
             period_grid, oversampling = LcbuilderHelper.calculate_period_grid(time, transit_period_min,
-                                                                               transit_period_max, 1, star_info, 2)
+                                                                              transit_period_max, 1, star_info, 2)
             power_args = {"period_min": 0.3,
                           "period_max": 2, "n_transits_min": 2, "show_progress_bar": False,
                           "duration_grid_step": 1.15,
@@ -455,7 +455,8 @@ class LcBuilder:
         clean_flux_err = flux_err
         is_short_cadence = cadence <= 300
         lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
-        if (object_info.binning > 1) or (object_info.prepare_algorithm) or (is_short_cadence and object_info.smooth_enabled) or (
+        if (object_info.binning > 1) or (object_info.prepare_algorithm) or (
+                is_short_cadence and object_info.smooth_enabled) or (
                 object_info.high_rms_enabled and object_info.initial_mask is None):
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
@@ -627,6 +628,17 @@ class LcBuilder:
 
     def parse_object_info(self, target: str):
         return MissionLightcurveBuilder().parse_object_id(target)
+
+    def get_default_author(self, target, cadence):
+        mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target)
+        if mission == constants.MISSION_KEPLER:
+            author = constants.KEPLER_AUTHOR
+        elif mission == constants.MISSION_K2:
+            author = constants.K2_AUTHOR
+        elif mission == constants.MISSION_TESS and ((cadence == 'short' or cadence == 'fast') or cadence < 600):
+            author = constants.TESS_SPOC_AUTHOR
+        elif mission == constants.MISSION_TESS and (cadence == 'long' or cadence >= 600):
+            author = constants.SPOC_AUTHOR
 
     def parse_coords(self, target: str):
         coords_parsed = re.search(self.COORDS_REGEX, target)
