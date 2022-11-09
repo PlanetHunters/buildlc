@@ -639,6 +639,7 @@ class LcBuilder:
             author = constants.TESS_SPOC_AUTHOR
         elif mission == constants.MISSION_TESS and (cadence == 'long' or cadence >= 600):
             author = constants.SPOC_AUTHOR
+        return author
 
     def parse_coords(self, target: str):
         coords_parsed = re.search(self.COORDS_REGEX, target)
