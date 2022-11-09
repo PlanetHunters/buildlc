@@ -1,3 +1,5 @@
+from math import floor, ceil
+
 import foldedleastsquares
 import numpy as np
 from foldedleastsquares import DefaultTransitTemplateGenerator
@@ -8,6 +10,23 @@ from scipy import stats
 class LcbuilderHelper:
     def __init__(self) -> None:
         super().__init__()
+
+    @staticmethod
+    def compute_t0s(time, period, t0, duration):
+        last_time = time[len(time) - 1]
+        first_time = time[0]
+        num_of_transits_back = int(floor(((t0 - first_time) / period)))
+        transits_lists_back = t0 - period * np.arange(num_of_transits_back, 0,
+                                                      -1) if num_of_transits_back > 0 else np.array([])
+        num_of_transits = int(ceil(((last_time - t0) / period)))
+        transit_lists = t0 + period * np.arange(0, num_of_transits)
+        transit_lists = np.append(transits_lists_back, transit_lists)
+        plot_range = duration * 2
+        transits_in_data = [
+            time[(transit > time - plot_range) & (transit < time + plot_range)] for
+            transit in transit_lists]
+        transit_t0s_list = transit_lists[[len(transits_in_data_set) > 0 for transits_in_data_set in transits_in_data]]
+        return transit_t0s_list
 
     @staticmethod
     def mask_transits(time, flux, period, duration, epoch, flux_err=None):
