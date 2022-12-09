@@ -22,7 +22,7 @@ if ! [[ -z ${tests_results} ]]; then
   python3.8 -m venv lcbuilder-reqs
   source lcbuilder-reqs/bin/activate
   python3.8 -m pip install pip -U
-  python3.8 -m pip install numpy
+  python3.8 -m pip install numpy==1.23.5
   python3.8 setup.py install
   python3.8 -m pip list --format=freeze > requirements.txt
   deactivate
