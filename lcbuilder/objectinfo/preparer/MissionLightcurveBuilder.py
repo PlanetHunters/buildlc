@@ -1,7 +1,7 @@
 import logging
 import re
 import shutil
-
+import everest
 import pandas
 
 import sys
@@ -24,6 +24,7 @@ from astropy import units as u
 import lightkurve as lk
 import matplotlib.pyplot as plt
 import os
+from lightkurve import KeplerLightCurve
 
 
 class MissionLightcurveBuilder(LightcurveBuilder):
@@ -56,6 +57,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         tpfs_dir = sherlock_dir + "/tpfs/"
         if not os.path.exists(tpfs_dir):
             os.mkdir(tpfs_dir)
+        lc_data = None
         if object_info.apertures is None:
             if isinstance(cadence, (int, float)) and cadence >= 600 and \
                     mission_prefix == constants.MISSION_ID_TESS and author == constants.ELEANOR_AUTHOR:
@@ -102,6 +104,43 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                         lc = lc.append(datum.to_lightkurve(datum.pca_flux, quality_mask=quality_bitmask).remove_nans()
                                        .flatten())
                     transits_min_count = 2
+            elif mission_prefix == constants.MISSION_ID_KEPLER_2 and author == constants.EVEREST_AUTHOR:
+                target_name = str(mission_id)
+                source = 'everest'
+                if object_info.ra is not None and object_info.dec is not None:
+                    target_name = str(object_info.ra) + ' ' + str(object_info.dec)
+                    star_info = starinfo.StarInfo(sherlock_id,
+                                                  *self.star_catalogs[constants.MISSION_ID_TESS].coords_catalog_info(
+                                                      object_info.ra, object_info.dec))
+                else:
+                    star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
+                lc = None
+                everest_cadence = 'sc' if isinstance(cadence, str) and (cadence == 'short' or cadence == 'fast') or (isinstance(cadence, int) and cadence < 600) else 'lc'
+                if campaigns is not None:
+                    for campaign in campaigns:
+                        try:
+                            everest_star = everest.user.Everest(id, campaign, quiet=True, cadence=everest_cadence)
+                        except:
+                            logging.exception("Can't find object for cadence %s and campaign %s in Everest", cadence, campaign)
+                        quality_mask = ((everest_star.quality != 0) & (everest_star.quality != 27))
+                        time = np.delete(everest_star.time, quality_mask)
+                        flux = np.delete(everest_star.flux, quality_mask)
+                        if lc is None:
+                            lc = KeplerLightCurve(time, flux)
+                        else:
+                            lc = lc.append(KeplerLightCurve(time, flux).normalize())
+                else:
+                    try:
+                        everest_star = everest.user.Everest(id, None, quiet=True, cadence=everest_cadence)
+                    except:
+                        logging.exception("Can't find object %s with %s cadence in Everest", cadence)
+                    quality_mask = ((everest_star.quality != 0) & (everest_star.quality != 27))
+                    time = np.delete(everest_star.time, quality_mask)
+                    flux = np.delete(everest_star.flux, quality_mask)
+                    lc = KeplerLightCurve(time, flux)
+                    lc = lc.normalize()
+                lc = lc.remove_nans()
+                transits_min_count = 2
             else:
                 target_name = str(mission_id)
                 if object_info.ra is not None and object_info.dec is not None:
