@@ -5,6 +5,9 @@ import everest
 import pandas
 
 import sys
+
+from everest.missions.k2 import Season
+
 import lcbuilder.eleanor
 sys.modules['eleanor'] = sys.modules['lcbuilder.eleanor']
 import eleanor
@@ -116,29 +119,21 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
                 lc = None
                 everest_cadence = 'sc' if isinstance(cadence, str) and (cadence == 'short' or cadence == 'fast') or (isinstance(cadence, int) and cadence < 600) else 'lc'
-                if campaigns is not None:
-                    for campaign in campaigns:
-                        try:
-                            everest_star = everest.user.Everest(id, campaign, quiet=True, cadence=everest_cadence)
-                        except:
-                            logging.exception("Can't find object for cadence %s and campaign %s in Everest", cadence, campaign)
-                        quality_mask = ((everest_star.quality != 0) & (everest_star.quality != 27))
-                        time = np.delete(everest_star.time, quality_mask)
-                        flux = np.delete(everest_star.flux, quality_mask)
-                        if lc is None:
-                            lc = KeplerLightCurve(time, flux)
-                        else:
-                            lc = lc.append(KeplerLightCurve(time, flux).normalize())
-                else:
+                if campaigns is None:
+                    campaigns = Season(id)
+                for campaign in campaigns:
                     try:
-                        everest_star = everest.user.Everest(id, None, quiet=True, cadence=everest_cadence)
+                        everest_star = everest.user.Everest(id, campaign, quiet=True, cadence=everest_cadence)
                     except:
-                        logging.exception("Can't find object %s with %s cadence in Everest", cadence)
+                        raise ValueError("Can't find object " + str(id) + " with " + str(cadence) + " cadence and " +
+                                     str(campaign) + " campaign in Everest")
                     quality_mask = ((everest_star.quality != 0) & (everest_star.quality != 27))
                     time = np.delete(everest_star.time, quality_mask)
                     flux = np.delete(everest_star.flux, quality_mask)
-                    lc = KeplerLightCurve(time, flux)
-                    lc = lc.normalize()
+                    if lc is None:
+                        lc = KeplerLightCurve(time, flux).normalize()
+                    else:
+                        lc = lc.append(KeplerLightCurve(time, flux).normalize())
                 lc = lc.remove_nans()
                 transits_min_count = 2
             else:
