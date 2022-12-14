@@ -22,7 +22,7 @@ class LightcurveBuilder(ABC):
         self.star_catalogs[constants.MISSION_ID_TESS] = TicStarCatalog()
         self.authors = {}
         self.authors[constants.MISSION_KEPLER] = constants.MISSION_KEPLER
-        self.authors[constants.MISSION_K2] = constants.EVEREST_AUTHOR
+        self.authors[constants.MISSION_K2] = constants.K2_AUTHOR
         self.authors[constants.MISSION_TESS] = constants.SPOC_AUTHOR
         self.authors[constants.MISSION_TESS + "_long"] = constants.ELEANOR_AUTHOR
 
