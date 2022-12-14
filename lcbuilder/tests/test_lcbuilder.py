@@ -57,6 +57,11 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertEqual(lc_build.cadence, 59)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_k2_star_params(lc_build.star_info)
+        lc_build = LcBuilder().build(MissionObjectInfo('all', "EPIC 211945201", cadence=1800,
+                                                       author=constants.EVEREST_AUTHOR), "./")
+        self.assertEqual(lc_build.cadence, 1766)
+        self.assertGreater(len(lc_build.lc), 0)
+        self.__test_k2_star_params(lc_build.star_info)
 
     def test_long_cadence(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=600,
