@@ -27,7 +27,7 @@ joblib==1.2.0
 k2plr==0.2.9
 keyring==23.11.0
 kiwisolver==1.4.4
-lcbuilder==0.9.11
+lcbuilder==0.10.0
 lightkurve==2.2.0
 llvmlite==0.39.1
 MarkupSafe==2.1.1
