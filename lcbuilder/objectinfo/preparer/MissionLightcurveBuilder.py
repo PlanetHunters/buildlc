@@ -121,6 +121,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 everest_cadence = 'sc' if isinstance(cadence, str) and (cadence == 'short' or cadence == 'fast') or (isinstance(cadence, int) and cadence < 600) else 'lc'
                 if campaigns is None:
                     campaigns = Season(id)
+                if not isinstance(campaigns, (list, np.ndarray)):
+                    campaigns = [campaigns]
                 for campaign in campaigns:
                     try:
                         everest_star = everest.user.Everest(id, campaign, quiet=True, cadence=everest_cadence)
