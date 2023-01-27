@@ -1,10 +1,13 @@
 from math import floor, ceil
 
 import foldedleastsquares
+import logging
 import numpy as np
 from foldedleastsquares import DefaultTransitTemplateGenerator
 from lcbuilder import constants
 from scipy import stats
+from lightkurve import TessLightCurve
+from astropy.stats.sigma_clipping import sigma_clip
 
 
 class LcbuilderHelper:
@@ -36,6 +39,27 @@ class LcbuilderHelper:
         if flux_err is not None:
             flux_err = flux_err[~mask]
         return time, flux, flux_err
+
+    @staticmethod
+    def mask_transits_dict(lc, transits_mask):
+        time, flux, flux_err = lc.time.value, lc.flux.value, lc.flux_err.value
+        for transit_mask in transits_mask:
+            logging.info('* Transit mask with P=%.2f d, T0=%.2f d, Dur=%.2f min *', transit_mask["P"],
+                         transit_mask["T0"], transit_mask["D"])
+            time, flux, flux_err = LcbuilderHelper.mask_transits(time, flux, transit_mask["P"],
+                                                                 transit_mask["D"] / 60 / 24, transit_mask["T0"])
+        lc = TessLightCurve(time=time, flux=flux, flux_err=flux_err, quality=np.zeros(len(time)))
+        return lc
+
+    @staticmethod
+    def clip_outliers(array, sigma, sigma_lower=None, sigma_upper=None):
+        mask = outlier_mask = sigma_clip(
+            data=array,
+            sigma=sigma,
+            sigma_lower=sigma_lower,
+            sigma_upper=sigma_upper,
+        ).mask
+        return array[~outlier_mask], outlier_mask
 
     @staticmethod
     def correct_epoch(mission, epoch):
