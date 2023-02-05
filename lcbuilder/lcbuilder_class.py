@@ -457,14 +457,14 @@ class LcBuilder:
         lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
         if (object_info.binning > 1) or (object_info.prepare_algorithm) or (
                 is_short_cadence and object_info.smooth_enabled) or (
-                object_info.high_rms_enabled and object_info.initial_mask is None):
+                object_info.high_rms_enabled and object_info.initial_mask is None) or object_info.truncate_border > 0:
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
             logging.info('================================================')
         if object_info.truncate_border > 0:
             clean_time, clean_flux, clean_flux_err = \
-                LcbuilderHelper.truncate_borders(clean_time, clean_flux, clean_flux_err)
-            lc = lightkurve.LightCurve(time=lc.time.value, flux=lc.flux.value, flux_err=lc.flux_err.value)
+                LcbuilderHelper.truncate_borders(clean_time, clean_flux, clean_flux_err, truncate_border=object_info.truncate_border)
+            lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
             lc = lc.remove_nans()
         if object_info.binning > 1:
             bins = len(clean_time) / object_info.binning
