@@ -116,6 +116,29 @@ class LcbuilderHelper:
                                 max_period, oversampling, transits_min_count, time_span_curve), oversampling
 
     @staticmethod
+    def truncate_borders(time, flux, flux_err, min_gap_size=0.5, truncate_border=0):
+        if truncate_border <= 0:
+            return time, flux, flux_err
+        dif = time[1:] - time[:-1]
+        jumps = np.where(dif > min_gap_size)[0]
+        jumps = np.append(jumps, len(time) - 1)
+        previous_jump_index = 0
+        truncated_flux = []
+        truncated_flux_err = []
+        truncated_time = []
+        for jumpIndex in jumps:
+            time_chunk = time[previous_jump_index + 1:jumpIndex]  # ignoring first measurement as could be the last from the previous chunk
+            flux_chunk = flux[previous_jump_index + 1:jumpIndex]  # ignoring first measurement as could be the last from the previous chunk
+            flux_err_chunk = flux_err[previous_jump_index + 1:jumpIndex]  # ignoring first measurement as could be the last from the previous chunk
+            if len(time_chunk) > 0:
+                valid_indexes = np.argwhere((time_chunk > time_chunk[0] + truncate_border) & (time_chunk < time_chunk[-1] - truncate_border)).flatten()
+                truncated_time = np.append(truncated_time, time_chunk[valid_indexes])
+                truncated_flux = np.append(truncated_flux, flux_chunk[valid_indexes])
+                truncated_flux_err = np.append(truncated_flux_err, flux_err_chunk[valid_indexes])
+            previous_jump_index = jumpIndex
+        return np.array(truncated_time), np.array(truncated_flux), np.array(truncated_flux_err)
+
+    @staticmethod
     def compute_cadence(time):
         cadence_array = np.diff(time) * 24 * 60 * 60
         cadence_array = cadence_array[~np.isnan(cadence_array)]
