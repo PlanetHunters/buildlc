@@ -21,7 +21,8 @@ class ObjectInfo(ABC):
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=100,
-                 oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1
+                 oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1,
+                 truncate_border=0
     ):
         self.initial_mask = initial_mask
         self.initial_transit_mask = initial_transit_mask
@@ -44,6 +45,7 @@ class ObjectInfo(ABC):
         self.oscillation_min_period = oscillation_min_period
         self.oscillation_max_period = oscillation_max_period
         self.binning = binning
+        self.truncate_border = truncate_border
 
     @abstractmethod
     def sherlock_id(self):
