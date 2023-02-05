@@ -461,12 +461,17 @@ class LcBuilder:
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
             logging.info('================================================')
+        if object_info.truncate_border > 0:
+            clean_time, clean_flux, clean_flux_err = \
+                LcbuilderHelper.truncate_borders(clean_time, clean_flux, clean_flux_err)
+            lc = lightkurve.LightCurve(time=lc.time.value, flux=lc.flux.value, flux_err=lc.flux_err.value)
+            lc = lc.remove_nans()
         if object_info.binning > 1:
-            bins = len(time) / object_info.binning
-            bin_edges_for_time = numpy.arange(time[0], time[-1], (cadence / 24 / 60 / 60) * object_info.binning)
-            bin_means, bin_edges, binnumber = stats.binned_statistic(time, flux, statistic='mean',
+            bins = len(clean_time) / object_info.binning
+            bin_edges_for_time = numpy.arange(clean_time[0], clean_time[-1], (cadence / 24 / 60 / 60) * object_info.binning)
+            bin_means, bin_edges, binnumber = stats.binned_statistic(clean_time, clean_flux, statistic='mean',
                                                                      bins=bin_edges_for_time)
-            bin_stds, _, _ = stats.binned_statistic(time, flux, statistic='std', bins=bin_edges_for_time)
+            bin_stds, _, _ = stats.binned_statistic(clean_time, clean_flux, statistic='std', bins=bin_edges_for_time)
             bin_width = (bin_edges[1] - bin_edges[0])
             bin_centers = bin_edges[1:] - bin_width / 2
             clean_time = bin_centers
@@ -589,7 +594,7 @@ class LcBuilder:
                           auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                           auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                           oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
-                          oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1):
+                          oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1, truncate_border=0):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
@@ -603,7 +608,7 @@ class LcBuilder:
                                      auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                      reduce_simple_oscillations, oscillation_snr_threshold,
                                      oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
-                                     oscillation_max_period, binning, eleanor_corr_flux
+                                     oscillation_max_period, binning, eleanor_corr_flux, truncate_border
                                      )
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
@@ -612,7 +617,7 @@ class LcBuilder:
                                           auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                           reduce_simple_oscillations, oscillation_snr_threshold,
                                           oscillation_amplitude_threshold, oscillation_ws_scale,
-                                          oscillation_min_period, oscillation_max_period, binning)
+                                          oscillation_min_period, oscillation_max_period, binning, truncate_border)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
@@ -620,7 +625,7 @@ class LcBuilder:
                                    auto_detrend_period, prepare_algorithm,
                                    reduce_simple_oscillations, oscillation_snr_threshold,
                                    oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
-                                   oscillation_max_period, binning)
+                                   oscillation_max_period, binning, truncate_border)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
