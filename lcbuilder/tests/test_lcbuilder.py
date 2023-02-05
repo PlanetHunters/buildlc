@@ -1,5 +1,8 @@
 import os
 import unittest
+import numpy as np
+from lcbuilder.helper import LcbuilderHelper
+
 from lcbuilder.lcbuilder_class import LcBuilder
 from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
 from lcbuilder.objectinfo.MissionInputObjectInfo import MissionInputObjectInfo
@@ -40,6 +43,25 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertEqual(lc_build.cadence, 120)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
+
+    def test_short_cadence_truncate(self):
+        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, truncate_border=0.5), "./")
+        self.assertEqual(lc_build.cadence, 120)
+        self.assertEqual(len(lc_build.lc), 28208)
+        self.__test_tess_star_params(lc_build.star_info)
+
+    def test_truncate_borders(self):
+        time = np.append(np.arange(0, 13.5, 0.01), np.arange(14.5, 28, 0.01))
+        flux = np.ones(2700)
+        flux_err = np.full(2700, 0.001)
+        time, flux, flux_err = LcbuilderHelper.truncate_borders(time, flux, flux_err, truncate_border=0)
+        self.assertEqual(2700, len(time))
+        self.assertEqual(2700, len(flux))
+        self.assertEqual(2700, len(flux_err))
+        time, flux, flux_err = LcbuilderHelper.truncate_borders(time, flux, flux_err, truncate_border=0.5)
+        self.assertEqual(2493, len(time))
+        self.assertEqual(2493, len(flux))
+        self.assertEqual(2493, len(flux_err))
 
     def test_short_cadence_kic(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "KIC 12557548", cadence=60), "./")
