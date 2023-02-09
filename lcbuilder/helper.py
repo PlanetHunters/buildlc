@@ -71,6 +71,17 @@ class LcbuilderHelper:
         return result
 
     @staticmethod
+    def normalize_mission_epoch(mission, epoch):
+        corrected_epoch = epoch
+        if mission == constants.MISSION_TESS:
+            corrected_epoch = epoch + constants.TBJD
+        elif mission == constants.MISSION_KEPLER:
+            corrected_epoch = epoch + constants.KBJD
+        elif mission == constants.MISSION_K2:
+            corrected_epoch = epoch + constants.KBJD
+        return corrected_epoch
+
+    @staticmethod
     def bin(time, values, bins, values_err=None, bin_err_mode='values_std'):
         if len(time) <= bins:
             value_err = values_err if values_err is not None else np.nanstd(values)
