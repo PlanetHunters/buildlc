@@ -24,7 +24,7 @@ class LightcurveBuilder(ABC):
         self.authors[constants.MISSION_KEPLER] = constants.MISSION_KEPLER
         self.authors[constants.MISSION_K2] = constants.K2_AUTHOR
         self.authors[constants.MISSION_TESS] = constants.SPOC_AUTHOR
-        self.authors[constants.MISSION_TESS + "_long"] = constants.ELEANOR_AUTHOR
+        self.authors[constants.MISSION_TESS + "_long"] = constants.TESS_SPOC_AUTHOR
 
     @abstractmethod
     def build(self, object_info, sherlock_dir, caches_root_dir):
