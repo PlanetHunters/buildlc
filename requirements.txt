@@ -28,7 +28,7 @@ joblib==1.2.0
 k2plr==0.2.9
 keyring==23.13.1
 kiwisolver==1.4.4
-lcbuilder==0.10.5
+lcbuilder==0.10.6
 lightkurve==2.2.0
 llvmlite==0.39.1
 MarkupSafe==2.1.2
@@ -71,5 +71,5 @@ uncertainties==3.1.7
 urllib3==1.26.13
 webencodings==0.5.1
 wotan==1.9
-xyzservices==2022.9.0
+xyzservices==2023.2.0
 zipp==3.14.0
