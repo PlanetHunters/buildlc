@@ -15,6 +15,12 @@ class LcbuilderHelper:
         super().__init__()
 
     @staticmethod
+    def convert_from_to(value, unit_from, unit_to):
+        value_with_units = value * unit_from
+        value_with_units = value_with_units.to(unit_to)
+        return value_with_units.value
+
+    @staticmethod
     def compute_t0s(time, period, t0, duration):
         last_time = time[len(time) - 1]
         first_time = time[0]
