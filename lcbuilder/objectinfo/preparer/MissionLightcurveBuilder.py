@@ -31,10 +31,13 @@ from lightkurve import KeplerLightCurve
 
 
 class MissionLightcurveBuilder(LightcurveBuilder):
+    """
+    Prepares the data from the mission official repositories of a given target
+    """
     def __init__(self):
         super().__init__()
 
-    def build(self, object_info: MissionObjectInfo, sherlock_dir, caches_root_dir):
+    def build(self, object_info: MissionObjectInfo, sherlock_dir, caches_root_dir, keep_tpfs: bool = True):
         mission_id = object_info.mission_id()
         sherlock_id = object_info.sherlock_id()
         logging.info("Retrieving star catalog info...")
@@ -93,9 +96,10 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     data.append(datum)
                     for tpf in tpfs:
                         if tpf.sector == s.sector:
-                            shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                             apertures[s.sector] = ApertureExtractor.from_boolean_mask(datum.aperture.astype(bool),
                                                                                       tpf.column, tpf.row)
+                            if keep_tpfs:
+                                shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                 quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
                 lc_data = self.extract_eleanor_lc_data(data)
                 lc = data[0].to_lightkurve(data[0].__dict__[object_info.eleanor_corr_flux],
@@ -163,7 +167,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 lc = None
                 matching_objects = []
                 for tpf in tpfs:
-                    shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
+                    if keep_tpfs:
+                        shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                     if mission_prefix == constants.MISSION_ID_KEPLER:
                         sector = tpf.quarter
                     elif mission_prefix == constants.MISSION_ID_TESS:
@@ -211,7 +216,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             apertures = object_info.apertures
             lc = None
             for tpf in tpfs:
-                shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
+                if keep_tpfs:
+                    shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
                 if mission_prefix == constants.MISSION_ID_KEPLER:
                     sector = tpf.quarter
                 elif mission_prefix == constants.MISSION_ID_TESS:
