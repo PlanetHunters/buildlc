@@ -168,7 +168,14 @@ class LcbuilderHelper:
         return duration_d // cadence
 
     @staticmethod
-    def mission_lightkurve_sector_extraction(mission, lightkurve_item):
+    def mission_lightkurve_sector_extraction(mission: str, lightkurve_item: object) -> np.ndarray:
+        """
+        Returns the sectors, quarters or campaigns from the given lightkurve object
+        :param mission: the mission of the lightkurve item
+        :param lightkurve_item: the lightkurve object containing the data
+        :return name: the name of the time series groups (quarter, campaign, sector)
+        :return sector: the list containing the identifiers
+        """
         sector_name = None
         sector = None
         if mission == constants.MISSION_TESS:
