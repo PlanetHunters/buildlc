@@ -187,7 +187,9 @@ class LcbuilderHelper:
         elif mission == constants.MISSION_K2:
             sector = lightkurve_item.campaign
             sector_name = 'campaign'
-        if isinstance(sector, (int, list)):
+        if isinstance(sector, int):
+            sector = np.array([sector])
+        elif isinstance(sector, list):
             sector = np.array(sector)
         return sector_name, sector
 
