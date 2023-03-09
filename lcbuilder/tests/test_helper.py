@@ -1,9 +1,12 @@
+import types
 import unittest
 
+from lcbuilder import constants
 from lcbuilder.helper import LcbuilderHelper
 
 from lcbuilder.HarmonicSelector import HarmonicSelector
 from astropy import units as u
+import numpy as np
 
 
 class TestsHarmonics(unittest.TestCase):
@@ -36,6 +39,38 @@ class TestsHarmonics(unittest.TestCase):
         assert not HarmonicSelector.is_harmonic(1000.0, 996.99, 2, 2)
         assert not HarmonicSelector.is_harmonic(1000.0, 996.99, 2, 4)
         assert HarmonicSelector.is_harmonic(1548.2578492081934, 1548.2588680913175, 7.5, 14.999495533860332)
+
+    def test_sector_extract(self):
+        sector = 2
+        expected_sectors = np.array(sector)
+        lightkurve_item = types.SimpleNamespace()
+        lightkurve_item.sector = sector
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_TESS, lightkurve_item)
+        self.assertEqual(expected_sectors, sectors)
+        lightkurve_item.sector = [sector]
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_TESS, lightkurve_item)
+        self.assertEqual(expected_sectors, sectors)
+        lightkurve_item.campaign = sector
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_K2, lightkurve_item)
+        self.assertEqual(expected_sectors, sectors)
+        lightkurve_item.campaign = [sector]
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_K2, lightkurve_item)
+        self.assertEqual(expected_sectors, sectors)
+        lightkurve_item.quarter = sector
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_KEPLER, lightkurve_item)
+        self.assertEqual(expected_sectors, sectors)
+        lightkurve_item.quarter = [sector]
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_KEPLER, lightkurve_item)
+        self.assertEqual(expected_sectors, sectors)
+        sector = [2, 3]
+        expected_sectors = np.array(sector)
+        lightkurve_item.sector = sector
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_TESS, lightkurve_item)
+        self.assertTrue(np.array_equal(expected_sectors, sectors))
+        sector = np.array([2, 3])
+        lightkurve_item.sector = sector
+        name, sectors = LcbuilderHelper.mission_lightkurve_sector_extraction(constants.MISSION_TESS, lightkurve_item)
+        self.assertTrue(np.array_equal(expected_sectors, sectors))
 
 
 if __name__ == '__main__':
