@@ -73,7 +73,8 @@ class LcBuilder:
         lc_df['flux'] = flux_float
         lc_df['flux_err'] = flux_err_float
         lc_df.to_csv(object_dir + "lc.csv", index=False)
-        lc = lc.remove_outliers(sigma_lower=float('inf'), sigma_upper=object_info.outliers_sigma)
+        lc = lc.remove_outliers(sigma_lower=float('inf') if object_info.lower_outliers_sigma is None else object_info.lower_outliers_sigma,
+                                sigma_upper=object_info.outliers_sigma)
         time_float = lc.time.value
         flux_float = lc.flux.value
         flux_err_float = lc.flux_err.value
@@ -594,7 +595,8 @@ class LcBuilder:
                           auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                           auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                           oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
-                          oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1, truncate_border=0):
+                          oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1, truncate_border=0,
+                          lower_outliers_sigma: float = None):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
@@ -608,8 +610,8 @@ class LcBuilder:
                                      auto_detrend_method, auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                      reduce_simple_oscillations, oscillation_snr_threshold,
                                      oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
-                                     oscillation_max_period, binning, eleanor_corr_flux, truncate_border
-                                     )
+                                     oscillation_max_period, binning, eleanor_corr_flux, truncate_border,
+                                     lower_outliers_sigma=lower_outliers_sigma)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
@@ -617,7 +619,8 @@ class LcBuilder:
                                           auto_detrend_ratio, auto_detrend_period, prepare_algorithm,
                                           reduce_simple_oscillations, oscillation_snr_threshold,
                                           oscillation_amplitude_threshold, oscillation_ws_scale,
-                                          oscillation_min_period, oscillation_max_period, binning, truncate_border)
+                                          oscillation_min_period, oscillation_max_period, binning, truncate_border,
+                                          lower_outliers_sigma=lower_outliers_sigma)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
@@ -625,7 +628,8 @@ class LcBuilder:
                                    auto_detrend_period, prepare_algorithm,
                                    reduce_simple_oscillations, oscillation_snr_threshold,
                                    oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
-                                   oscillation_max_period, binning, truncate_border)
+                                   oscillation_max_period, binning, truncate_border,
+                                   lower_outliers_sigma=lower_outliers_sigma)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
