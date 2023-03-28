@@ -482,7 +482,7 @@ class LcBuilder:
             lc = lc.remove_nans()
         if object_info.prepare_algorithm is not None:
             clean_time, clean_flux, clean_flux_err = object_info.prepare_algorithm.prepare(
-                object_info, lc.time.value, lc.flux.value, lc.flux_err.value)
+                object_info, lc.time.value, lc.flux.value, lc.flux_err.value, star_info=star_info)
             lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
             lc = lc.remove_nans()
         clean_time = lc.time.value

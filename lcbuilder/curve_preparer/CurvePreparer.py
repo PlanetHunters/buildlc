@@ -6,5 +6,5 @@ class CurvePreparer(ABC):
         pass
 
     @abstractmethod
-    def prepare(self, object_info, time, flux, flux_err):
+    def prepare(self, object_info, time, flux, flux_err, star_info=star_info):
         pass
