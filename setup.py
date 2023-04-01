@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-version = "0.10.13"
+version = "0.11.0"
 setuptools.setup(
     name="lcbuilder", # Replace with your own username
     version=version,
@@ -25,7 +25,7 @@ setuptools.setup(
                         'everest-pipeline==2.0.12',
                         #'eleanor==2.0.5', included with submodule
                         'pandas==1.3.1',
-                        "lightkurve==2.2.0",
+                        "lightkurve==2.4.0",
                         "photutils==1.0.2",
                         "scipy==1.8.0",
                         "statsmodels==0.12.2",
