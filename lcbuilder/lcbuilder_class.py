@@ -154,7 +154,7 @@ class LcBuilder:
 
     def __plot_autocorrelation(self, lc, cadence_s, object_id, filename, max_days=5):
         nlags = int(max_days / (cadence_s / 60 / 60 / 24))
-        correlation = acf(lc.flux.value, nlags=nlags)
+        correlation = acf(lc.flux.value, nlags=nlags, fft=False)
         lags = numpy.linspace(0, max_days, len(correlation))
         fig, axs = plt.subplots(1, 1, figsize=(8, 4), constrained_layout=True)
         axs.set_ylabel("Autocorrelation")
