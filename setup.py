@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-version = "0.11.1"
+version = "0.11.2"
 setuptools.setup(
     name="lcbuilder", # Replace with your own username
     version=version,
@@ -31,7 +31,7 @@ setuptools.setup(
                         "statsmodels==0.12.2",
                         "tess-point==0.6.1",
                         'torch==1.9.0',
-                        "foldedleastsquares==1.0.38",
+                        "foldedleastsquares==1.0.39",
                         'typing_extensions==4.3.0', #For astropy version
                         'urllib3==1.26.13',
                         "wotan==1.9",
