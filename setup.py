@@ -20,7 +20,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.8',
-    install_requires=['numpy==1.22.4',
+    install_requires=['numpy==1.24.2',
                         'astropy==5.0.4',
                         'everest-pipeline==2.0.12',
                         #'eleanor==2.0.5', included with submodule
@@ -31,7 +31,7 @@ setuptools.setup(
                         "statsmodels==0.12.2",
                         "tess-point==0.6.1",
                         'torch==1.9.0',
-                        "foldedleastsquares==1.0.39",
+                        "foldedleastsquares==1.0.41",
                         'typing_extensions==4.3.0', #For astropy version
                         'urllib3==1.26.13',
                         "wotan==1.9",
