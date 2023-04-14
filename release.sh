@@ -19,12 +19,12 @@ if ! [[ -z ${tests_results} ]]; then
   rm -r build
   rm -R lcbuilder-reqs
   set -e
-  python3.8 -m venv lcbuilder-reqs
+  python3.9 -m venv lcbuilder-reqs
   source lcbuilder-reqs/bin/activate
-  python3.8 -m pip install pip -U
-  python3.8 -m pip install numpy==1.22.4
-  python3.8 setup.py install
-  python3.8 -m pip list --format=freeze > requirements.txt
+  python3.9 -m pip install pip -U
+  python3.9 -m pip install numpy==1.23.5
+  python3.9 setup.py install
+  python3.9 -m pip list --format=freeze > requirements.txt
   deactivate
   git_tag=$1
   git pull
