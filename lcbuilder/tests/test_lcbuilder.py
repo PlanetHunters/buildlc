@@ -58,7 +58,8 @@ class TestsLcBuilder(unittest.TestCase):
         self.__test_tess_star_params(lc_build.star_info)
 
     def test_short_cadence_truncate(self):
-        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, truncate_border=0.5), "./")
+        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, truncate_border=0.5,
+                                                       smooth_enabled=True), "./")
         self.assertEqual(lc_build.cadence, 120)
         self.assertEqual(len(lc_build.lc), 28208)
         self.__test_tess_star_params(lc_build.star_info)
