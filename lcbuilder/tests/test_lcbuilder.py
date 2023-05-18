@@ -51,8 +51,8 @@ class TestsLcBuilder(unittest.TestCase):
         assert object_info.mission_id() is None and object_info.sherlock_id() == "INP_" + os.path.splitext(file)[
             0].replace("/", "_")
 
-    def test_short_cadence(self):
-        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120), "./")
+    def test_short_cadence_mask(self):
+        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, initial_mask=[[1654, 1655]]), "./")
         self.assertEqual(lc_build.cadence, 120)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
