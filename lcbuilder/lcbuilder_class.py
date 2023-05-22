@@ -131,7 +131,8 @@ class LcBuilder:
                                                              object_info.oscillation_amplitude_threshold,
                                                              object_info.oscillation_ws_scale,
                                                              object_info.oscillation_min_period,
-                                                             cpus)
+                                                             object_info.oscillation_max_period,
+                                                             cpus=cpus)
         if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
