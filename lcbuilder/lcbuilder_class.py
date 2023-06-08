@@ -429,7 +429,7 @@ class LcBuilder:
             logging.info('teff = %.6f', result_star_info.teff)
         if result_star_info.lum:
             logging.info('lum = %.6f', result_star_info.lum)
-        if result_star_info.logg
+        if result_star_info.logg:
             logging.info('logg = %.6f', result_star_info.logg)
         star_df = pandas.DataFrame(columns=['obj_id', 'ra', 'dec', 'R_star', 'R_star_lerr', 'R_star_uerr', 'M_star',
                                             'M_star_lerr', 'M_star_uerr', 'Teff_star', 'Teff_star_lerr',
