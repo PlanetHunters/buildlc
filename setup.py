@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-version = "0.12.4"
+version = "0.12.5"
 setuptools.setup(
     name="lcbuilder", # Replace with your own username
     version=version,
