@@ -3,9 +3,9 @@ import numpy as np
 
 class HarmonicSelector:
     @staticmethod
-    def is_harmonic(a_t0, b_t0, a_period, b_period):
+    def is_harmonic(a_t0, b_t0, a_period, b_period, t0_tolerance=0.075):
         multiplicity = HarmonicSelector.multiple_of(a_period, b_period, 0.025)
-        return multiplicity != 0 and HarmonicSelector.matches_t0(a_t0, b_t0, a_period, multiplicity, 0.04)
+        return multiplicity != 0 and HarmonicSelector.matches_t0(a_t0, b_t0, a_period, multiplicity, t0_tolerance)
 
     @staticmethod
     def multiple_of(a, b, tolerance=0.05):
