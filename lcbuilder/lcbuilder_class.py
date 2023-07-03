@@ -197,7 +197,7 @@ class LcBuilder:
         #     w = eval('numpy .' + window + '(window_len)')
         # # TODO probably problematic with big gaps in the middle of the curve
         # clean_flux = numpy.convolve(w / w.sum(), s, mode='valid')
-        if sg_window_len % 2 != 0:
+        if sg_window_len % 2 == 0:
             sg_window_len = sg_window_len + 1
         clean_flux = savgol_filter(flux, sg_window_len, 3)
         return clean_flux
@@ -539,7 +539,7 @@ class LcBuilder:
             lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
             lc = lc.remove_nans()
         smooth_cadences = 20 * 60 // cadence
-        if smooth_cadences >= 2 and object_info.smooth_enabled:
+        if smooth_cadences > 3 and object_info.smooth_enabled:
             # logging.info('Applying Smooth phase (savgol + weighted average)')
             logging.info('Applying Smooth phase (savgol)')
             # Using SavGol filter with 20 minutes window
