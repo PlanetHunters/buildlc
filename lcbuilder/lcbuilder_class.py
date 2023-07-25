@@ -501,41 +501,48 @@ class LcBuilder:
             dif = clean_time[1:] - clean_time[:-1]
             jumps = numpy.where(dif > 3)[0]
             jumps = numpy.append(jumps, len(clean_time))
-            before_flux = clean_flux
             previous_jump_index = 0
-            entire_high_rms_mask = numpy.array([], dtype=bool)
-            entire_bin_centers = numpy.array([])
-            entire_bin_stds = numpy.array([])
-            entire_rms_threshold_array = numpy.array([])
+            rms_mask_values = [object_info.high_rms_threshold, 1.25, 1.5, 1.75]
+            entire_high_rms_mask = []
+            entire_bin_centers = []
+            entire_bin_stds = []
+            entire_rms_threshold_array = []
+            for rms_mask_value in rms_mask_values:
+                entire_high_rms_mask = entire_high_rms_mask + [numpy.array([], dtype=bool)]
+                entire_bin_centers = entire_bin_centers + [numpy.array([])]
+                entire_bin_stds = entire_bin_stds + [numpy.array([])]
+                entire_rms_threshold_array = entire_rms_threshold_array + [numpy.array([])]
             for jumpIndex in jumps:
                 time_partial = clean_time[previous_jump_index:jumpIndex]
                 flux_partial = clean_flux[previous_jump_index:jumpIndex]
-                before_flux_partial = before_flux[previous_jump_index:jumpIndex]
-                bins = (time_partial[len(time_partial) - 1] - time_partial[1]) * bins_per_day
-                bin_stds, bin_edges, binnumber = stats.binned_statistic(time_partial[1:], flux_partial[1:],
-                                                                        statistic='std', bins=bins)
-                stds_median = numpy.nanmedian(bin_stds[bin_stds > 0])
-                stds_median_array = numpy.full(len(bin_stds), stds_median)
-                rms_threshold_array = stds_median_array * object_info.high_rms_threshold
-                too_high_bin_stds_indexes = numpy.argwhere(bin_stds > rms_threshold_array)
-                high_std_mask = numpy.array([bin_id - 1 in too_high_bin_stds_indexes for bin_id in binnumber])
-                entire_high_rms_mask = numpy.append(entire_high_rms_mask, numpy.append(high_std_mask[0], high_std_mask))
-                bin_width = (bin_edges[1] - bin_edges[0])
-                bin_centers = bin_edges[1:] - bin_width / 2
-                entire_bin_centers = numpy.append(entire_bin_centers, bin_centers)
-                entire_bin_stds = numpy.append(entire_bin_stds, bin_stds)
-                entire_rms_threshold_array = numpy.append(entire_rms_threshold_array, rms_threshold_array)
-                previous_jump_index = jumpIndex
-                self.__plot_rms_mask(star_info.object_id, object_info.high_rms_bin_hours, bin_centers,
-                                     bin_stds, rms_threshold_array, high_std_mask, time_partial, flux_partial,
+                high_std_masks = []
+                bin_centers_array = []
+                bin_stds_array = []
+                rms_threshold_array_array = []
+                for rms_mask_value_index, rms_mask_value in enumerate(rms_mask_values):
+                    high_std_mask, bin_centers, bin_stds, rms_threshold_array = \
+                        self.__compute_rms_mask(time_partial, flux_partial, bins_per_day, rms_mask_value)
+                    high_std_masks = high_std_masks + [high_std_mask]
+                    bin_centers_array = bin_centers_array + [bin_centers]
+                    bin_stds_array = bin_stds_array + [bin_stds]
+                    rms_threshold_array_array = rms_threshold_array_array + [rms_threshold_array]
+                    entire_high_rms_mask[rms_mask_value_index] = numpy.append(entire_high_rms_mask[rms_mask_value_index], high_std_mask)
+                    entire_bin_centers[rms_mask_value_index] = numpy.append(entire_bin_centers[rms_mask_value_index], bin_centers)
+                    entire_bin_stds[rms_mask_value_index] = numpy.append(entire_bin_stds[rms_mask_value_index], bin_stds)
+                    entire_rms_threshold_array[rms_mask_value_index] = numpy.append(entire_rms_threshold_array[rms_mask_value_index], rms_threshold_array)
+                    previous_jump_index = jumpIndex
+                self.__plot_rms_mask(star_info.object_id, object_info.high_rms_bin_hours, rms_mask_values,
+                                     bin_centers_array, bin_stds_array, rms_threshold_array_array, high_std_masks,
+                                     time_partial, flux_partial,
                                      'High_RMS_Mask_' + str(star_info.object_id) + '_time_' +
                                      str(time_partial[1]) + '_' + str(time_partial[-1]), object_dir)
-            self.__plot_rms_mask(star_info.object_id, object_info.high_rms_bin_hours, entire_bin_centers,
-                                 entire_bin_stds, entire_rms_threshold_array, entire_high_rms_mask[1:], clean_time,
-                                 clean_flux, 'High_RMS_Mask_' + str(star_info.object_id), object_dir)
-            clean_time = clean_time[~entire_high_rms_mask]
-            clean_flux = clean_flux[~entire_high_rms_mask]
-            clean_flux_err = clean_flux_err[~entire_high_rms_mask]
+            self.__plot_rms_mask(star_info.object_id, object_info.high_rms_bin_hours, rms_mask_values,
+                                 entire_bin_centers, entire_bin_stds, entire_rms_threshold_array,
+                                 entire_high_rms_mask, clean_time, clean_flux,
+                                 'High_RMS_Mask_' + str(star_info.object_id), object_dir)
+            clean_time = clean_time[~entire_high_rms_mask[0]]
+            clean_flux = clean_flux[~entire_high_rms_mask[0]]
+            clean_flux_err = clean_flux_err[~entire_high_rms_mask[0]]
             lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
             lc = lc.remove_nans()
         smooth_cadences = 20 * 60 // cadence
@@ -555,28 +562,44 @@ class LcBuilder:
             lc = lc.remove_nans()
         return lc
 
-    def __plot_rms_mask(self, object_id, rms_bin_hours, bin_centers, bin_stds, rms_threshold_array, rms_mask,
-                        time, flux, filename, object_dir):
+    def __compute_rms_mask(self, time, flux, bins_per_day, rms_threshold):
+        bins = (time[len(time) - 1] - time[1]) * bins_per_day
+        bin_stds, bin_edges, binnumber = stats.binned_statistic(time[1:], flux[1:], statistic='std', bins=bins)
+        stds_median = numpy.nanmedian(bin_stds[bin_stds > 0])
+        stds_median_array = numpy.full(len(bin_stds), stds_median)
+        rms_threshold_array = stds_median_array * rms_threshold
+        too_high_bin_stds_indexes = numpy.argwhere(bin_stds > rms_threshold_array)
+        high_std_mask = numpy.array([bin_id - 1 in too_high_bin_stds_indexes for bin_id in binnumber])
+        high_std_mask = numpy.append(high_std_mask[0], high_std_mask)
+        bin_width = (bin_edges[1] - bin_edges[0])
+        bin_centers = bin_edges[1:] - bin_width / 2
+        return high_std_mask, bin_centers, bin_stds, rms_threshold_array
+
+    def __plot_rms_mask(self, object_id, rms_bin_hours, rms_values, bin_centers, bin_stds, rms_threshold_array,
+                        rms_mask, time, flux, filename, object_dir):
+        rms_values_len = len(rms_values)
         plot_dir = object_dir + "/rms_mask/"
+        colors = ['red', 'orange', 'pink', 'purple']
         if not os.path.exists(plot_dir):
             os.mkdir(plot_dir)
-        fig, axs = plt.subplots(2, 1, figsize=(8, 8), constrained_layout=True)
+        fig, axs = plt.subplots(1 + rms_values_len, 1, figsize=(12, 4 + 4 * rms_values_len), constrained_layout=True,
+                                gridspec_kw={'height_ratios': [1.5, 1, 1, 1, 1]})
         axs[0].set_title(str(rms_bin_hours) + " hours binned RMS")
-        axs[1].set_title("Total and masked high RMS flux")
+        for index, rms_value in enumerate(rms_values):
+            axs[0].plot(bin_centers[index], rms_threshold_array[index], color=colors[index], rasterized=True,
+                        label=f'{rms_values[index]} * RMS Threshold')
+            axs[index + 1].set_title(f"Masked Flux > {rms_values[index]} * RMS")
+            axs[index + 1].set_xlabel('Time (d)')
+            axs[index + 1].set_ylabel('Relative flux')
+            axs[index + 1].scatter(time[1:], flux[1:], color='gray', alpha=0.5, rasterized=True, label="Flux norm.")
+            axs[index + 1].scatter(time[rms_mask[index]], flux[rms_mask[index]], linewidth=1, color=colors[index],
+                                   alpha=1.0, label="High RMS")
+            axs[index + 1].legend(loc="upper right")
         fig.suptitle(str(object_id) + " High RMS Mask")
         axs[0].set_xlabel('Time (d)')
         axs[0].set_ylabel('Flux RMS')
-        axs[1].set_xlabel('Time (d)')
-        axs[1].set_ylabel('Flux norm.')
-        axs[0].plot(bin_centers, bin_stds, color='black', alpha=0.75, rasterized=True, label="RMS")
-        axs[0].plot(bin_centers, rms_threshold_array, color='red', rasterized=True,
-                    label='Mask Threshold')
-        axs[1].scatter(time[1:], flux[1:], color='gray', alpha=0.5, rasterized=True, label="Flux norm.")
-        axs[1].scatter(time[1:][rms_mask], flux[1:][rms_mask], linewidth=1, color='red',
-                       alpha=1.0,
-                       label="High RMS")
+        axs[0].plot(bin_centers[0], bin_stds[0], color='black', alpha=0.75, rasterized=True, label="RMS")
         axs[0].legend(loc="upper right")
-        axs[1].legend(loc="upper right")
         fig.savefig(plot_dir + filename + '.png')
         fig.clf()
 
