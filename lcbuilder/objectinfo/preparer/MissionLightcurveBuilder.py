@@ -100,14 +100,16 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                                                                                       tpf.column, tpf.row)
                             if keep_tpfs:
                                 shutil.copy(tpf.path, tpfs_dir + os.path.basename(tpf.path))
-                quality_bitmask = np.bitwise_and(data[0].quality.astype(int), 175)
+                quality_bitmask = np.bitwise_and(data[0].quality.astype(int),
+                                                 object_info.quality_flag if object_info.quality_flag != 'default' else 175)
                 lc_data = self.extract_eleanor_lc_data(data)
                 lc = data[0].to_lightkurve(data[0].__dict__[object_info.eleanor_corr_flux],
                                            quality_mask=quality_bitmask).remove_nans().flatten()
                 sectors = [datum.source_info.sector for datum in data]
                 if len(data) > 1:
                     for datum in data[1:]:
-                        quality_bitmask = np.bitwise_and(datum.quality, 175)
+                        quality_bitmask = np.bitwise_and(datum.quality,
+                                                         object_info.quality_flag if object_info.quality_flag != 'default' else 175)
                         lc = lc.append(datum.to_lightkurve(datum.pca_flux, quality_mask=quality_bitmask).remove_nans()
                                        .flatten())
                     transits_min_count = 2
@@ -133,7 +135,9 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     except:
                         raise ValueError("Can't find object " + str(id) + " with " + str(cadence) + " cadence and " +
                                      str(campaign) + " campaign in Everest")
-                    quality_mask = ((everest_star.quality != 0) & (everest_star.quality != 27))
+                    quality_mask = ((everest_star.quality != 0) & (everest_star.quality != 27)) \
+                        if object_info.quality_flag == 'default' \
+                        else np.where(object_info.quality_flag & everest_star.quality)
                     time = np.delete(everest_star.time, quality_mask)
                     flux = np.delete(everest_star.flux, quality_mask)
                     if lc is None:
@@ -154,12 +158,13 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 lcf_search_results = lk.search_lightcurve(target_name, mission=mission, exptime=cadence,
                                                sector=sectors, quarter=quarters,
                                                campaign=campaigns, author=author)
-                lcf = lcf_search_results.download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR)
+                lcf = lcf_search_results.download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                                                      quality_bitmask=object_info.quality_flag)
                 tpfs = lk.search_targetpixelfile(target_name, mission=mission, exptime=cadence,
                                                  sector=sectors, quarter=quarters,
                                                  campaign=campaigns, author=author)\
                     .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
-                                  cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
+                                  cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE), quality_bitmask=object_info.quality_flag)
                 if lcf is None:
                     raise ObjectProcessingError("The target " + str(mission_id) + " is not available for the author " + author +
                                      ", cadence " + str(cadence) + "s and sectors " + str(tokens))
@@ -290,6 +295,9 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 sectors = [lcfile.campaign for lcfile in tpfs]
             sectors = None if sectors is None else np.unique(sectors)
             lc_data = None
+        # flux_std = np.nanstd(lc.flux)
+        # for index, time in enumerate(lc.time.value):
+        #     lc.flux[index] = lc.flux[index].value + np.random.normal(0, 2 * flux_std / (1 + index / 700), 1)
         return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures)
 
     def __calculate_transits_min_count(self, len_data):
