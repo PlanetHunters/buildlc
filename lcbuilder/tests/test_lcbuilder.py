@@ -52,10 +52,24 @@ class TestsLcBuilder(unittest.TestCase):
             0].replace("/", "_")
 
     def test_short_cadence_mask(self):
-        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, initial_mask=[[1654, 1655]]), "./")
+        lc_build = LcBuilder().build(
+            MissionObjectInfo('all', "TIC 352315023", cadence=120, initial_mask=[[1654, 1655]]), "./")
         self.assertEqual(lc_build.cadence, 120)
         self.assertGreater(len(lc_build.lc), 0)
         self.__test_tess_star_params(lc_build.star_info)
+
+    def test_short_cadence_high_rms_mask(self):
+        lc_build_no_mask = LcBuilder().build(MissionObjectInfo([5], "TIC 271596225", cadence=120,
+                                                       high_rms_enabled=False, quality_flag=0), "./")
+        lc_build_mask = LcBuilder().build(MissionObjectInfo([5], "TIC 271596225", cadence=120,
+                                                       high_rms_enabled=True, high_rms_threshold=2, quality_flag=0),
+                                          "./")
+        lc_build_mask_low = LcBuilder().build(MissionObjectInfo([5], "TIC 271596225", cadence=120,
+                                                       high_rms_enabled=True, high_rms_threshold=1.15, quality_flag=0),
+                                              "./")
+        self.assertEqual(lc_build_no_mask.cadence, 120)
+        self.assertEqual(len(lc_build_no_mask.lc), len(lc_build_mask.lc))
+        self.assertTrue(len(lc_build_no_mask.lc) > len(lc_build_mask_low.lc))
 
     def test_short_cadence_truncate(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, truncate_border=0.5,
