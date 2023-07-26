@@ -13,7 +13,7 @@ class MissionObjectInfo(ObjectInfo):
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
                  oscillation_min_period=0.002, oscillation_max_period=0.001, binning=1, eleanor_corr_flux="pca_flux",
-                 truncate_border=0, lower_outliers_sigma: float = None):
+                 truncate_border=0, lower_outliers_sigma: float = None, quality_flag='default'):
         """
         @param sectors: an array of integers specifying which sectors will be analysed for the object
         @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
@@ -57,6 +57,7 @@ class MissionObjectInfo(ObjectInfo):
         self.cadence = cadence
         self.author = author
         self.eleanor_corr_flux = eleanor_corr_flux
+        self.quality_flag = quality_flag
 
     def sherlock_id(self):
         sherlock_id = None
