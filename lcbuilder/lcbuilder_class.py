@@ -502,7 +502,7 @@ class LcBuilder:
             jumps = numpy.where(dif > 3)[0]
             jumps = numpy.append(jumps, len(clean_time))
             previous_jump_index = 0
-            rms_mask_values = [object_info.high_rms_threshold, 1.25, 1.5, 1.75]
+            rms_mask_values = [object_info.high_rms_threshold, 1.75, 1.5, 1.25]
             entire_high_rms_mask = []
             entire_bin_centers = []
             entire_bin_stds = []
@@ -584,22 +584,22 @@ class LcBuilder:
             os.mkdir(plot_dir)
         fig, axs = plt.subplots(1 + rms_values_len, 1, figsize=(12, 4 + 4 * rms_values_len), constrained_layout=True,
                                 gridspec_kw={'height_ratios': [1.5, 1, 1, 1, 1]})
-        axs[0].set_title(str(rms_bin_hours) + " hours binned RMS")
         for index, rms_value in enumerate(rms_values):
             axs[0].plot(bin_centers[index], rms_threshold_array[index], color=colors[index], rasterized=True,
                         label=f'{rms_values[index]} * RMS Threshold')
-            axs[index + 1].set_title(f"Masked Flux > {rms_values[index]} * RMS")
-            axs[index + 1].set_xlabel('Time (d)')
-            axs[index + 1].set_ylabel('Relative flux')
+            axs[index + 1].set_ylabel('Relative flux', fontsize=18)
+            if index == len(rms_values) - 1:
+                axs[index + 1].set_xlabel('Time (d)', fontsize=18)
             axs[index + 1].scatter(time[1:], flux[1:], color='gray', alpha=0.5, rasterized=True, label="Flux norm.")
             axs[index + 1].scatter(time[rms_mask[index]], flux[rms_mask[index]], linewidth=1, color=colors[index],
-                                   alpha=1.0, label="High RMS")
-            axs[index + 1].legend(loc="upper right")
-        fig.suptitle(str(object_id) + " High RMS Mask")
-        axs[0].set_xlabel('Time (d)')
-        axs[0].set_ylabel('Flux RMS')
-        axs[0].plot(bin_centers[0], bin_stds[0], color='black', alpha=0.75, rasterized=True, label="RMS")
-        axs[0].legend(loc="upper right")
+                                   alpha=1.0, label=f"Masked Flux > {rms_values[index]} * RMS")
+            axs[index + 1].legend(loc="upper right", fontsize=16)
+            axs[index + 1].tick_params(axis='both', which='major', labelsize=18)
+        fig.suptitle(object_id + " High RMS Mask", fontsize=24)
+        axs[0].set_ylabel('Flux RMS', fontsize=18)
+        axs[0].plot(bin_centers[0], bin_stds[0], color='black', alpha=0.75, rasterized=True, label=str(rms_bin_hours) + "h binned RMS")
+        axs[0].legend(loc="upper right", fontsize=16)
+        axs[0].tick_params(axis='both', which='major', labelsize=18)
         fig.savefig(plot_dir + filename + '.png')
         fig.clf()
 
