@@ -59,12 +59,12 @@ class TestsLcBuilder(unittest.TestCase):
         self.__test_tess_star_params(lc_build.star_info)
 
     def test_short_cadence_high_rms_mask(self):
-        lc_build_no_mask = LcBuilder().build(MissionObjectInfo([5], "TIC 271596225", cadence=120,
+        lc_build_no_mask = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
                                                        high_rms_enabled=False, quality_flag=0), "./")
-        lc_build_mask = LcBuilder().build(MissionObjectInfo([5], "TIC 271596225", cadence=120,
-                                                       high_rms_enabled=True, high_rms_threshold=2, quality_flag=0),
+        lc_build_mask = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
+                                                       high_rms_enabled=True, high_rms_threshold=300, quality_flag=0),
                                           "./")
-        lc_build_mask_low = LcBuilder().build(MissionObjectInfo([5], "TIC 271596225", cadence=120,
+        lc_build_mask_low = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
                                                        high_rms_enabled=True, high_rms_threshold=1.15, quality_flag=0),
                                               "./")
         self.assertEqual(lc_build_no_mask.cadence, 120)
@@ -73,9 +73,9 @@ class TestsLcBuilder(unittest.TestCase):
 
     def test_short_cadence_truncate(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, truncate_border=0.5,
-                                                       smooth_enabled=True), "./")
+                                                       initial_trim=5, smooth_enabled=True), "./")
         self.assertEqual(lc_build.cadence, 120)
-        self.assertEqual(len(lc_build.lc), 28208)
+        self.assertEqual(len(lc_build.lc), 791)
         self.__test_tess_star_params(lc_build.star_info)
 
     def test_truncate_borders(self):

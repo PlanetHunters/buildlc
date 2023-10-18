@@ -64,6 +64,12 @@ class LcBuilder:
         time_float = lc_build.lc.time.value
         flux_float = lc_build.lc.flux.value
         flux_err_float = lc_build.lc.flux_err.value
+        if object_info.initial_trim is not None:
+            logging.info(f"Trimming data keeping first {object_info.initial_trim} days")
+            initial_trim_args = numpy.argwhere(time_float < time_float[0] + object_info.initial_trim).flatten()
+            time_float = time_float[initial_trim_args]
+            flux_float = flux_float[initial_trim_args]
+            flux_err_float = flux_err_float[initial_trim_args]
         lc = lightkurve.LightCurve(time=time_float, flux=flux_float, flux_err=flux_err_float)
         lc_df = pandas.DataFrame(columns=['#time', 'flux', 'flux_err'])
         time_float = numpy.array(time_float)
@@ -627,7 +633,7 @@ class LcBuilder:
                           auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                           oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
                           oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1, truncate_border=0,
-                          lower_outliers_sigma: float = None):
+                          lower_outliers_sigma: float = None, initial_trim: float = None):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
@@ -642,7 +648,7 @@ class LcBuilder:
                                      reduce_simple_oscillations, oscillation_snr_threshold,
                                      oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
                                      oscillation_max_period, binning, eleanor_corr_flux, truncate_border,
-                                     lower_outliers_sigma=lower_outliers_sigma)
+                                     lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
@@ -651,7 +657,7 @@ class LcBuilder:
                                           reduce_simple_oscillations, oscillation_snr_threshold,
                                           oscillation_amplitude_threshold, oscillation_ws_scale,
                                           oscillation_min_period, oscillation_max_period, binning, truncate_border,
-                                          lower_outliers_sigma=lower_outliers_sigma)
+                                          lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
@@ -660,7 +666,7 @@ class LcBuilder:
                                    reduce_simple_oscillations, oscillation_snr_threshold,
                                    oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
                                    oscillation_max_period, binning, truncate_border,
-                                   lower_outliers_sigma=lower_outliers_sigma)
+                                   lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
