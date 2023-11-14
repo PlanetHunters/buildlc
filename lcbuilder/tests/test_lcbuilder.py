@@ -62,13 +62,13 @@ class TestsLcBuilder(unittest.TestCase):
         lc_build_no_mask = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
                                                        high_rms_enabled=False, quality_flag=0), "./")
         lc_build_mask = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
-                                                       high_rms_enabled=True, high_rms_threshold=300, quality_flag=0),
+                                                       high_rms_enabled=True, high_rms_threshold=5, quality_flag=0),
                                           "./")
         lc_build_mask_low = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
                                                        high_rms_enabled=True, high_rms_threshold=1.15, quality_flag=0),
                                               "./")
         self.assertEqual(lc_build_no_mask.cadence, 120)
-        self.assertEqual(len(lc_build_no_mask.lc), len(lc_build_mask.lc))
+        self.assertNotEqual(len(lc_build_no_mask.lc), len(lc_build_mask.lc))
         self.assertTrue(len(lc_build_no_mask.lc) > len(lc_build_mask_low.lc))
 
     def test_short_cadence_truncate(self):
