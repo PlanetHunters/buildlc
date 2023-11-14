@@ -25,7 +25,7 @@ setuptools.setup(
                         'everest-pipeline==2.0.12',
                         #'eleanor==2.0.5', included with submodule
                         'pandas==1.5.3',
-                        "lightkurve==2.4.0",
+                        "lightkurve==2.4.2",
                         "photutils==1.0.2",
                         "scipy==1.8.0",
                         "statsmodels==0.13.5",
