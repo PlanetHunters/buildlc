@@ -5,6 +5,8 @@ import re
 import pandas
 from abc import ABC, abstractmethod
 
+from lightkurve import LightCurveCollection
+
 from lcbuilder import constants
 from lcbuilder.star.EpicStarCatalog import EpicStarCatalog
 from lcbuilder.star.KicStarCatalog import KicStarCatalog
@@ -48,8 +50,18 @@ class LightcurveBuilder(ABC):
             mission = None
         return mission, mission_prefix, int(id)
 
-    def extract_lc_data(self, lcf):
-        fit_files = [astropy_fits.open(lcf.filename) for lcf in lcf]
+    def _sort_lc_data(self, lcf: LightCurveCollection, mission_prefix: str):
+        if mission_prefix == constants.MISSION_ID_KEPLER:
+            args = np.argsort(lcf.quarter)
+        elif mission_prefix == constants.MISSION_ID_KEPLER_2:
+            args = np.argsort(lcf.campaign)
+        elif mission_prefix == constants.MISSION_ID_TESS:
+            args = np.argsort(lcf.sector)
+        return args
+
+    def extract_lc_data(self, lcf, mission_prefix):
+        lcf_sort_indexes = self._sort_lc_data(lcf, mission_prefix=mission_prefix)
+        fit_files = [astropy_fits.open(lcf.filename) for lcf in lcf[lcf_sort_indexes]]
         time = []
         flux = []
         flux_err = []

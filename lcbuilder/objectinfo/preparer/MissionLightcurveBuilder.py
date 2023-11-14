@@ -168,7 +168,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 if lcf is None:
                     raise ObjectProcessingError("The target " + str(mission_id) + " is not available for the author " + author +
                                      ", cadence " + str(cadence) + "s and sectors " + str(tokens))
-                lc_data = self.extract_lc_data(lcf)
+                lc_data = self.extract_lc_data(lcf, mission_prefix)
                 lc = None
                 matching_objects = []
                 for tpf in tpfs:
@@ -181,7 +181,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     if mission_prefix == constants.MISSION_ID_KEPLER_2:
                         sector = tpf.campaign
                     apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
-                for i in range(0, len(lcf.data)):
+                lcf_sort_indexes = self._sort_lc_data(lcf, mission_prefix)
+                for i in lcf_sort_indexes:
                     if lcf.data[i].label == mission_id:
                         if lc is None:
                             lc = lcf.data[i].normalize()
@@ -202,12 +203,12 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 lc = lc.remove_nans()
                 transits_min_count = self.__calculate_transits_min_count(len(lcf))
                 if mission_prefix == constants.MISSION_ID_KEPLER:
-                    sectors = [lcfile.quarter for lcfile in lcf]
+                    sectors = [lcfile.quarter for lcfile in lcf[lcf_sort_indexes]]
                 elif mission_prefix == constants.MISSION_ID_TESS:
-                    sectors = [file.sector for file in lcf]
+                    sectors = [file.sector for file in lcf[lcf_sort_indexes]]
                 elif mission_prefix == constants.MISSION_ID_KEPLER_2:
                     logging.info("Correcting K2 motion in light curve...")
-                    sectors = [lcfile.campaign for lcfile in lcf]
+                    sectors = [lcfile.campaign for lcfile in lcf[lcf_sort_indexes]]
                     lc = lc.to_corrector("sff").correct(windows=20)
                 source = "tpf"
         else:
