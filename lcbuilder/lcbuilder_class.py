@@ -64,10 +64,6 @@ class LcBuilder:
         time_float = lc_build.lc.time.value
         flux_float = lc_build.lc.flux.value
         flux_err_float = lc_build.lc.flux_err.value
-        sort_indexes = numpy.argsort(time_float).flatten()
-        time_float = time_float[sort_indexes]
-        flux_float = flux_float[sort_indexes]
-        flux_err_float = flux_err_float[sort_indexes]
         if object_info.initial_trim is not None:
             logging.info(f"Trimming data keeping first {object_info.initial_trim} days")
             initial_trim_args = numpy.argwhere(time_float < time_float[0] + object_info.initial_trim).flatten()
