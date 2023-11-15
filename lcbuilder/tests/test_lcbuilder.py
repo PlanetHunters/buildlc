@@ -8,9 +8,10 @@ from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
 from lcbuilder.objectinfo.MissionInputObjectInfo import MissionInputObjectInfo
 from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
 from lcbuilder import constants
+from lcbuilder.tests.test_lcbuilder_abstract import TestsLcBuilderAbstract
 
 
-class TestsLcBuilder(unittest.TestCase):
+class TestsLcBuilder(TestsLcBuilderAbstract):
     def test_build_object_info(self):
         file = None
         cadence = 120
@@ -50,46 +51,6 @@ class TestsLcBuilder(unittest.TestCase):
                                                   None)
         assert object_info.mission_id() is None and object_info.sherlock_id() == "INP_" + os.path.splitext(file)[
             0].replace("/", "_")
-
-    def test_short_cadence_mask(self):
-        lc_build = LcBuilder().build(
-            MissionObjectInfo('all', "TIC 352315023", cadence=120, initial_mask=[[1654, 1655]]), "./")
-        self.assertEqual(lc_build.cadence, 120)
-        self.assertGreater(len(lc_build.lc), 0)
-        self.__test_tess_star_params(lc_build.star_info)
-
-    def test_short_cadence_high_rms_mask(self):
-        lc_build_no_mask = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
-                                                       high_rms_enabled=False, quality_flag=0), "./")
-        lc_build_mask = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
-                                                       high_rms_enabled=True, high_rms_threshold=5, quality_flag=0),
-                                          "./")
-        lc_build_mask_low = LcBuilder().build(MissionObjectInfo('all', "TIC 261136679", cadence=120,
-                                                       high_rms_enabled=True, high_rms_threshold=1.15, quality_flag=0),
-                                              "./")
-        self.assertEqual(lc_build_no_mask.cadence, 120)
-        self.assertNotEqual(len(lc_build_no_mask.lc), len(lc_build_mask.lc))
-        self.assertTrue(len(lc_build_no_mask.lc) > len(lc_build_mask_low.lc))
-
-    def test_short_cadence_truncate(self):
-        lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=120, truncate_border=0.5,
-                                                       initial_trim=5, smooth_enabled=True), "./")
-        self.assertEqual(lc_build.cadence, 120)
-        self.assertEqual(len(lc_build.lc), 791)
-        self.__test_tess_star_params(lc_build.star_info)
-
-    def test_truncate_borders(self):
-        time = np.append(np.arange(0, 13.5, 0.01), np.arange(14.5, 28, 0.01))
-        flux = np.ones(2700)
-        flux_err = np.full(2700, 0.001)
-        time, flux, flux_err = LcbuilderHelper.truncate_borders(time, flux, flux_err, truncate_border=0)
-        self.assertEqual(2700, len(time))
-        self.assertEqual(2700, len(flux))
-        self.assertEqual(2700, len(flux_err))
-        time, flux, flux_err = LcbuilderHelper.truncate_borders(time, flux, flux_err, truncate_border=0.5)
-        self.assertEqual(2493, len(time))
-        self.assertEqual(2493, len(flux))
-        self.assertEqual(2493, len(flux_err))
 
     def test_short_cadence_kic(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "KIC 12557548", cadence=60), "./")
@@ -146,39 +107,6 @@ class TestsLcBuilder(unittest.TestCase):
         self.assertGreater(len(lc_build.lc), 0)
         self.assertTrue(lc_build.star_info.mass_assumed)
         self.assertTrue(lc_build.star_info.radius_assumed)
-
-    def __test_tess_star_params(self, star_info):
-        self.assertAlmostEqual(star_info.mass, 0.47, 1)
-        self.assertAlmostEqual(star_info.mass_min, 0.44, 2)
-        self.assertAlmostEqual(star_info.mass_max, 0.5, 1)
-        self.assertAlmostEqual(star_info.radius, 0.18, 1)
-        self.assertAlmostEqual(star_info.radius_min, 0.076, 3)
-        self.assertAlmostEqual(star_info.radius_max, 0.284, 3)
-        self.assertEqual(star_info.teff, 31000)
-        self.assertAlmostEqual(star_info.ra, 300.47, 2)
-        self.assertAlmostEqual(star_info.dec, -71.96, 2)
-
-    def __test_kepler_star_params(self, star_info):
-        self.assertAlmostEqual(star_info.mass, 0.72, 2)
-        self.assertAlmostEqual(star_info.mass_min, 0.22, 2)
-        self.assertAlmostEqual(star_info.mass_max, 1.22, 2)
-        self.assertAlmostEqual(star_info.radius, 0.734, 2)
-        self.assertAlmostEqual(star_info.radius_min, 0.234, 2)
-        self.assertAlmostEqual(star_info.radius_max, 1.234, 2)
-        self.assertEqual(star_info.teff, 4571)
-        self.assertAlmostEqual(star_info.ra, 290.966, 3)
-        self.assertAlmostEqual(star_info.dec, 51.50472, 3)
-
-    def __test_k2_star_params(self, star_info):
-        self.assertAlmostEqual(star_info.mass, 1.102, 3)
-        self.assertAlmostEqual(star_info.mass_min, 0.989, 3)
-        self.assertAlmostEqual(star_info.mass_max, 1.215, 3)
-        self.assertAlmostEqual(star_info.radius, 1.251, 2)
-        self.assertAlmostEqual(star_info.radius_min, 1.012, 3)
-        self.assertAlmostEqual(star_info.radius_max, 1.613, 3)
-        self.assertEqual(star_info.teff, 6043)
-        self.assertAlmostEqual(star_info.ra, 136.573975, 3)
-        self.assertAlmostEqual(star_info.dec, 19.402252, 3)
 
     def test_build(self):
         lc_build = LcBuilder().build(MissionObjectInfo([13], "TIC 352315023", cadence=1800,
