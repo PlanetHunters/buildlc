@@ -155,20 +155,18 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                                                       object_info.ra, object_info.dec))
                 else:
                     star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
-                lcf_search_results = lk.search_lightcurve(target_name, mission=mission, exptime=cadence,
-                                               sector=sectors, quarter=quarters,
-                                               campaign=campaigns, author=author)
-                lcf = lcf_search_results.download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
-                                                      quality_bitmask=object_info.quality_flag)
-                tpfs = lk.search_targetpixelfile(target_name, mission=mission, exptime=cadence,
-                                                 sector=sectors, quarter=quarters,
-                                                 campaign=campaigns, author=author)\
-                    .download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
-                                  cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE), quality_bitmask=object_info.quality_flag)
+                lcf = LightcurveBuilder.search_lightcurve(target_name, mission_prefix, mission, cadence, sectors,
+                                                          quarters, campaigns, author,
+                                                          caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                                                          object_info.quality_flag)
+                tpfs = LightcurveBuilder.search_tpf(target_name, mission_prefix, mission, cadence,
+                                                 sectors, quarters,
+                                                 campaigns, author, caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                                                    object_info.quality_flag, (CUTOUT_SIZE, CUTOUT_SIZE))
                 if lcf is None:
-                    raise ObjectProcessingError("The target " + str(mission_id) + " is not available for the author " + author +
-                                     ", cadence " + str(cadence) + "s and sectors " + str(tokens))
-                lc_data = self.extract_lc_data(lcf, mission_prefix)
+                    raise ObjectProcessingError("The target " + str(mission_id) + " is not available for the author " +
+                                                author + ", cadence " + str(cadence) + "s and sectors " + str(tokens))
+                lc_data = self.extract_lc_data(lcf)
                 lc = None
                 matching_objects = []
                 for tpf in tpfs:
@@ -181,8 +179,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     if mission_prefix == constants.MISSION_ID_KEPLER_2:
                         sector = tpf.campaign
                     apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
-                lcf_sort_indexes = self._sort_lc_data(lcf, mission_prefix)
-                for i in lcf_sort_indexes:
+                for i in range(0, len(lcf)):
                     if lcf.data[i].label == mission_id:
                         if lc is None:
                             lc = lcf.data[i].normalize()
@@ -203,21 +200,20 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 lc = lc.remove_nans()
                 transits_min_count = self.__calculate_transits_min_count(len(lcf))
                 if mission_prefix == constants.MISSION_ID_KEPLER:
-                    sectors = [lcfile.quarter for lcfile in lcf[lcf_sort_indexes]]
+                    sectors = [lcfile.quarter for lcfile in lcf]
                 elif mission_prefix == constants.MISSION_ID_TESS:
-                    sectors = [file.sector for file in lcf[lcf_sort_indexes]]
+                    sectors = [file.sector for file in lcf]
                 elif mission_prefix == constants.MISSION_ID_KEPLER_2:
                     logging.info("Correcting K2 motion in light curve...")
-                    sectors = [lcfile.campaign for lcfile in lcf[lcf_sort_indexes]]
+                    sectors = [lcfile.campaign for lcfile in lcf]
                     lc = lc.to_corrector("sff").correct(windows=20)
                 source = "tpf"
         else:
             logging.info("Using user apertures!")
-            tpf_search_results = lk.search_targetpixelfile(str(mission_id), mission=mission, exptime=cadence,
-                                             sector=sectors, quarter=quarters, campaign=campaigns,
-                                             author=author)
-            tpfs = tpf_search_results.download_all(download_dir=caches_root_dir + LIGHTKURVE_CACHE_DIR,
-                                                   cutout_size=(CUTOUT_SIZE, CUTOUT_SIZE))
+            tpfs = LightcurveBuilder.search_tpf(str(mission_id), mission_prefix, mission, cadence,
+                                                sectors, quarters,
+                                                campaigns, author, caches_root_dir + LIGHTKURVE_CACHE_DIR,
+                                                None, (CUTOUT_SIZE, CUTOUT_SIZE))
             source = "tpf"
             apertures = object_info.apertures
             lc = None

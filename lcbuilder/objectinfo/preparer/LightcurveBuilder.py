@@ -1,4 +1,7 @@
 import logging
+from typing import Optional
+
+import lightkurve
 import numpy as np
 import astropy.io.fits as astropy_fits
 import re
@@ -50,7 +53,8 @@ class LightcurveBuilder(ABC):
             mission = None
         return mission, mission_prefix, int(id)
 
-    def _sort_lc_data(self, lcf: LightCurveCollection, mission_prefix: str):
+    @staticmethod
+    def sort_lc_data(lcf: LightCurveCollection, mission_prefix: str):
         if mission_prefix == constants.MISSION_ID_KEPLER:
             args = np.argsort(lcf.quarter)
         elif mission_prefix == constants.MISSION_ID_KEPLER_2:
@@ -59,9 +63,31 @@ class LightcurveBuilder(ABC):
             args = np.argsort(lcf.sector)
         return args
 
-    def extract_lc_data(self, lcf, mission_prefix):
-        lcf_sort_indexes = self._sort_lc_data(lcf, mission_prefix=mission_prefix)
-        fit_files = [astropy_fits.open(lcf.filename) for lcf in lcf[lcf_sort_indexes]]
+    @staticmethod
+    def search_lightcurve(target_name: str, mission_prefix: str, mission: str, cadence: int | str, sectors: list,
+                          quarters: list, campaigns: list, author: str, download_dir: str, quality_bitmask: int | str):
+        lcf_search_results = lightkurve.search_lightcurve(target_name, mission=mission, exptime=cadence,
+                                                  sector=sectors, quarter=quarters,
+                                                  campaign=campaigns, author=author)
+        lcf = lcf_search_results.download_all(download_dir=download_dir,
+                                              quality_bitmask=quality_bitmask)
+        sort_indexes = LightcurveBuilder.sort_lc_data(lcf, mission_prefix)
+        return lcf[sort_indexes]
+
+    @staticmethod
+    def search_tpf(target_name: str, mission_prefix: str, mission: str, cadence: Optional[int | str],
+                   sectors: Optional[list], quarters: Optional[list], campaigns: Optional[list],
+                   author: Optional[str], download_dir: Optional[str], quality_bitmask: Optional[int | str],
+                   cutout_size: Optional[tuple]):
+        tpfs = lightkurve.search_targetpixelfile(target_name, mission=mission, exptime=cadence,
+                                         sector=sectors, quarter=quarters,
+                                         campaign=campaigns, author=author)\
+            .download_all(download_dir=download_dir, cutout_size=cutout_size, quality_bitmask=quality_bitmask)
+        sort_indexes = LightcurveBuilder.sort_lc_data(tpfs, mission_prefix)
+        return tpfs[sort_indexes]
+
+    def extract_lc_data(self, lcf: LightCurveCollection):
+        fit_files = [astropy_fits.open(lcf.filename) for lcf in lcf]
         time = []
         flux = []
         flux_err = []
