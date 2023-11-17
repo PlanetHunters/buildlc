@@ -158,11 +158,12 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                 lcf = LightcurveBuilder.search_lightcurve(target_name, mission_prefix, mission, cadence, sectors,
                                                           quarters, campaigns, author,
                                                           caches_root_dir + LIGHTKURVE_CACHE_DIR,
-                                                          object_info.quality_flag)
+                                                          object_info.quality_flag, object_info.initial_trim_sectors)
                 tpfs = LightcurveBuilder.search_tpf(target_name, mission_prefix, mission, cadence,
                                                  sectors, quarters,
                                                  campaigns, author, caches_root_dir + LIGHTKURVE_CACHE_DIR,
-                                                    object_info.quality_flag, (CUTOUT_SIZE, CUTOUT_SIZE))
+                                                    object_info.quality_flag, (CUTOUT_SIZE, CUTOUT_SIZE),
+                                                    object_info.initial_trim_sectors)
                 if lcf is None:
                     raise ObjectProcessingError("The target " + str(mission_id) + " is not available for the author " +
                                                 author + ", cadence " + str(cadence) + "s and sectors " + str(tokens))

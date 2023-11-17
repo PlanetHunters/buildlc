@@ -1,3 +1,5 @@
+from typing import Optional
+
 from lcbuilder.objectinfo.ObjectInfo import ObjectInfo
 
 
@@ -14,7 +16,7 @@ class MissionObjectInfo(ObjectInfo):
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
                  oscillation_min_period=0.002, oscillation_max_period=0.001, binning=1, eleanor_corr_flux="pca_flux",
                  truncate_border=0, lower_outliers_sigma: float = None, quality_flag='default',
-                 initial_trim: float = None):
+                 initial_trim: float = None, initial_trim_sectors: Optional[int] = None):
         """
         @param sectors: an array of integers specifying which sectors will be analysed for the object
         @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
@@ -45,6 +47,7 @@ class MissionObjectInfo(ObjectInfo):
         @param truncate_border the cadences to be eliminated for each 0.5 days separation in days
         @param float lower_outliers_sigma: sigma used to cut lower outliers.
         @param float initial_trim: allowed measurements in days before trimming
+        @param int initial_trim_sectors: allowed sectors to be retrieved (if there are more, the first ones are kept)
         """
         super().__init__(initial_mask, initial_transit_mask, star_info, apertures,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
@@ -61,6 +64,7 @@ class MissionObjectInfo(ObjectInfo):
         self.author = author
         self.eleanor_corr_flux = eleanor_corr_flux
         self.quality_flag = quality_flag
+        self.initial_trim_sectors = initial_trim_sectors
 
     def sherlock_id(self):
         sherlock_id = None

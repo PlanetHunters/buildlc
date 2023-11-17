@@ -65,10 +65,11 @@ class LightcurveBuilder(ABC):
 
     @staticmethod
     def search_lightcurve(target_name: str, mission_prefix: str, mission: str, cadence: int | str, sectors: list,
-                          quarters: list, campaigns: list, author: str, download_dir: str, quality_bitmask: int | str):
+                          quarters: list, campaigns: list, author: str, download_dir: str, quality_bitmask: int | str,
+                          sectors_limit: Optional[int] = None):
         lcf_search_results = lightkurve.search_lightcurve(target_name, mission=mission, exptime=cadence,
                                                   sector=sectors, quarter=quarters,
-                                                  campaign=campaigns, author=author)
+                                                  campaign=campaigns, author=author, limit=sectors_limit)
         lcf = lcf_search_results.download_all(download_dir=download_dir,
                                               quality_bitmask=quality_bitmask)
         sort_indexes = LightcurveBuilder.sort_lc_data(lcf, mission_prefix)
@@ -78,10 +79,10 @@ class LightcurveBuilder(ABC):
     def search_tpf(target_name: str, mission_prefix: str, mission: str, cadence: Optional[int | str],
                    sectors: Optional[list], quarters: Optional[list], campaigns: Optional[list],
                    author: Optional[str], download_dir: Optional[str], quality_bitmask: Optional[int | str],
-                   cutout_size: Optional[tuple]):
+                   cutout_size: Optional[tuple], sectors_limit: Optional[int] = None):
         tpfs = lightkurve.search_targetpixelfile(target_name, mission=mission, exptime=cadence,
                                          sector=sectors, quarter=quarters,
-                                         campaign=campaigns, author=author)\
+                                         campaign=campaigns, author=author, limit=sectors_limit)\
             .download_all(download_dir=download_dir, cutout_size=cutout_size, quality_bitmask=quality_bitmask)
         sort_indexes = LightcurveBuilder.sort_lc_data(tpfs, mission_prefix)
         return tpfs[sort_indexes]
