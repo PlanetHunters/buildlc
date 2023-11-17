@@ -56,7 +56,7 @@ class TestsLcBuilder(TestsLcBuilderAbstract):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "KIC 12557548", cadence=60), "./")
         self.assertEqual(lc_build.cadence, 59)
         self.assertGreater(len(lc_build.lc), 0)
-        self.__test_kepler_star_params(lc_build.star_info)
+        self._test_kepler_star_params(lc_build.star_info)
 
     def test_long_cadence_missing_star_kic(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "KIC 12106934", cadence=1800), "./")
@@ -67,19 +67,19 @@ class TestsLcBuilder(TestsLcBuilderAbstract):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "EPIC 211945201", cadence=60), "./")
         self.assertEqual(lc_build.cadence, 59)
         self.assertGreater(len(lc_build.lc), 0)
-        self.__test_k2_star_params(lc_build.star_info)
+        self._test_k2_star_params(lc_build.star_info)
         lc_build = LcBuilder().build(MissionObjectInfo('all', "EPIC 211945201", cadence=1800,
                                                        author=constants.EVEREST_AUTHOR), "./")
         self.assertEqual(lc_build.cadence, 1766)
         self.assertGreater(len(lc_build.lc), 0)
-        self.__test_k2_star_params(lc_build.star_info)
+        self._test_k2_star_params(lc_build.star_info)
 
     def test_long_cadence(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 352315023", cadence=600,
                                                        author=constants.ELEANOR_AUTHOR), "./")
         self.assertEqual(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
-        self.__test_tess_star_params(lc_build.star_info)
+        self._test_tess_star_params(lc_build.star_info)
 
     def test_long_cadence_other_author(self):
         lc_build = LcBuilder().build(MissionObjectInfo('all', "TIC 192833836", cadence=600,
@@ -93,16 +93,16 @@ class TestsLcBuilder(TestsLcBuilderAbstract):
                                      "./")
         self.assertEqual(lc_build.cadence, 600)
         self.assertGreater(len(lc_build.lc), 0)
-        self.__test_tess_star_params(lc_build.star_info)
+        self._test_tess_star_params(lc_build.star_info)
 
     def test_input_with_id(self):
-        directory = os.path.dirname(__file__) + "/input.csv"
+        directory = self._get_test_resource_file("input.csv")
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
         self.assertGreater(len(lc_build.lc), 0)
-        self.__test_tess_star_params(lc_build.star_info)
+        self._test_tess_star_params(lc_build.star_info)
 
     def test_input_without_id(self):
-        directory = os.path.dirname(__file__) + "/input.csv"
+        directory = self._get_test_resource_file("input.csv")
         lc_build = LcBuilder().build(InputObjectInfo(directory), "./")
         self.assertGreater(len(lc_build.lc), 0)
         self.assertTrue(lc_build.star_info.mass_assumed)
@@ -130,7 +130,7 @@ class TestsLcBuilder(TestsLcBuilderAbstract):
         self.assertEqual(3663, len(lc_build.lc_data))
 
     def test_binning(self):
-        directory = os.path.dirname(__file__) + "/input.csv"
+        directory = os.path.dirname(__file__) + "/resources/input.csv"
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
         self.assertEqual(4551, len(lc_build.lc))
         lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, binning=2), "./")

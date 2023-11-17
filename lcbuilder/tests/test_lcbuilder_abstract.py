@@ -1,4 +1,5 @@
 import os
+import shutil
 import unittest
 import numpy as np
 from lcbuilder.helper import LcbuilderHelper
@@ -11,7 +12,18 @@ from lcbuilder import constants
 
 
 class TestsLcBuilderAbstract(unittest.TestCase):
-    def __test_tess_star_params(self, star_info):
+    def tearDown(self) -> None:
+        super().tearDown()
+        for file in os.listdir(os.path.dirname(__file__)):
+            if file.endswith('.png') or file.endswith('.csv') or file.endswith('yaml'):
+                os.remove(file)
+            elif os.path.isdir(file) and file != "resources":
+                shutil.rmtree(file, ignore_errors=True)
+
+    def _get_test_resource_file(self, file_name):
+        return os.path.dirname(__file__) + "/resources/" + file_name
+
+    def _test_tess_star_params(self, star_info):
         self.assertAlmostEqual(star_info.mass, 0.47, 1)
         self.assertAlmostEqual(star_info.mass_min, 0.44, 2)
         self.assertAlmostEqual(star_info.mass_max, 0.5, 1)
@@ -22,7 +34,7 @@ class TestsLcBuilderAbstract(unittest.TestCase):
         self.assertAlmostEqual(star_info.ra, 300.47, 2)
         self.assertAlmostEqual(star_info.dec, -71.96, 2)
 
-    def __test_kepler_star_params(self, star_info):
+    def _test_kepler_star_params(self, star_info):
         self.assertAlmostEqual(star_info.mass, 0.72, 2)
         self.assertAlmostEqual(star_info.mass_min, 0.22, 2)
         self.assertAlmostEqual(star_info.mass_max, 1.22, 2)
@@ -33,7 +45,7 @@ class TestsLcBuilderAbstract(unittest.TestCase):
         self.assertAlmostEqual(star_info.ra, 290.966, 3)
         self.assertAlmostEqual(star_info.dec, 51.50472, 3)
 
-    def __test_k2_star_params(self, star_info):
+    def _test_k2_star_params(self, star_info):
         self.assertAlmostEqual(star_info.mass, 1.102, 3)
         self.assertAlmostEqual(star_info.mass_min, 0.989, 3)
         self.assertAlmostEqual(star_info.mass_max, 1.215, 3)

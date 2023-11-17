@@ -8,8 +8,10 @@ from lcbuilder.HarmonicSelector import HarmonicSelector
 from astropy import units as u
 import numpy as np
 
+from lcbuilder.tests.test_lcbuilder_abstract import TestsLcBuilderAbstract
 
-class TestsHarmonics(unittest.TestCase):
+
+class TestsHarmonics(TestsLcBuilderAbstract):
     def test_convert_from_to(self):
         mass = 1 # solar radius
         mass = LcbuilderHelper.convert_from_to(mass, u.M_sun, u.M_earth)

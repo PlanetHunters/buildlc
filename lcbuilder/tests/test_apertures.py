@@ -4,9 +4,10 @@ import lightkurve
 
 from lcbuilder.constants import CUTOUT_SIZE
 from lcbuilder.photometry.aperture_extractor import ApertureExtractor
+from lcbuilder.tests.test_lcbuilder_abstract import TestsLcBuilderAbstract
 
 
-class TestsApertures(unittest.TestCase):
+class TestsApertures(TestsLcBuilderAbstract):
     def test_from_boolean_mask(self):
         tpfs = lightkurve.search_targetpixelfile(target="TIC 251848941", cadence=120, author="SPOC")\
             .download_all()

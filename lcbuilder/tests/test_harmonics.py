@@ -1,8 +1,9 @@
 import unittest
 from lcbuilder.HarmonicSelector import HarmonicSelector
+from lcbuilder.tests.test_lcbuilder_abstract import TestsLcBuilderAbstract
 
 
-class TestsHarmonics(unittest.TestCase):
+class TestsHarmonics(TestsLcBuilderAbstract):
     def test_t0s_matching(self):
         assert HarmonicSelector.matches_t0(1, 1, 1, 1)
         assert HarmonicSelector.matches_t0(1, 2, 1, -2)
