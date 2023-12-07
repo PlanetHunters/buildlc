@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-version = "0.14.1"
+version = "0.14.2"
 setuptools.setup(
     name="lcbuilder", # Replace with your own username
     version=version,
@@ -18,16 +18,18 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-    ],
+    ], zip_safe= False,
     python_requires='>=3.10',
     install_requires=['numpy==1.23.5',
-                        'astropy==5.0.4',
+                        'astropy==5.3.4',
+                        'Cython==3.0.6',
                         'everest-pipeline==2.0.12',
                         #'eleanor==2.0.5', included with submodule
                         'pandas==1.5.3',
                         "lightkurve==2.4.2",
-                        "photutils==1.0.2",
-                        "scipy==1.8.0",
+                        "photutils==1.10.0",
+                        "pybind11==2.11.1",
+                        "scipy==1.11.4",
                         "statsmodels==0.13.5",
                         "tess-point==0.6.1",
                         'torch==2.0.0',
