@@ -334,7 +334,10 @@ class LcBuilder:
         fig, axs = plt.subplots(1, 1, figsize=(8, 4), constrained_layout=True)
         axs.set_ylabel("Flux norm.")
         axs.set_xlabel("Time (d)")
-        axs.set_title(object_id + " stellar activity P=" + str(round(period, 6)) + "d")
+        title = "stellar activity P=" + str(round(period, 6)) + "d"
+        if object_id is not None:
+            title = f'{object_id} {title}'
+        axs.set_title(title)
         axs.scatter(folded_time, flux, 2, color="blue", alpha=0.3)
         axs.scatter(folded_time, fit_flux, 2, color="orange", alpha=1)
         signal_dir = sa_dir + "/" + str(number)
@@ -349,7 +352,10 @@ class LcBuilder:
         if not os.path.exists(signal_dir):
             os.mkdir(signal_dir)
         periodogram.plot(view='period', scale='log')
-        plt.title(object_id + " Lightcurve periodogram without signal at P=" + str(round(period, 6)) + "d")
+        title = "Lightcurve periodogram without signal at P=" + str(round(period, 6)) + "d"
+        if object_id is not None:
+            title = f'{object_id} {title}'
+        plt.title(title)
         plt.savefig(signal_dir + "/Periodogram.png", bbox_inches='tight')
         plt.clf()
         plt.close()
@@ -438,10 +444,8 @@ class LcBuilder:
         if result_star_info.logg:
             logging.info('logg = %.6f', result_star_info.logg)
         star_df = pandas.DataFrame(columns=['obj_id', 'ra', 'dec', 'R_star', 'R_star_lerr', 'R_star_uerr', 'M_star',
-                                            'M_star_lerr', 'M_star_uerr', 'radius', 'mass', 'Teff_star',
-                                            'Teff_star_lerr', 'Teff_star_uerr', 'Teff', 'ld_a', 'ld_b', 'lum',
-                                            'v', 'v_err', 'j', 'j_err',
-                                            'k', 'k_err', 'h', 'h_err', 'kp', 'feh', 'feh_err', 'dist_arcsec'])
+                                            'M_star_lerr', 'M_star_uerr', 'Teff_star', 'Teff_star_lerr',
+                                            'Teff_star_uerr', 'ld_a', 'ld_b'])
         ld_a = result_star_info.ld_coefficients[0] if result_star_info.ld_coefficients is not None else None
         ld_b = result_star_info.ld_coefficients[1] if result_star_info.ld_coefficients is not None else None
         star_df = star_df.append(
@@ -451,17 +455,15 @@ class LcBuilder:
              'R_star_uerr': result_star_info.radius_max - result_star_info.radius,
              'M_star': result_star_info.mass, 'M_star_lerr': result_star_info.mass - result_star_info.mass_min,
              'M_star_uerr': result_star_info.mass_max - result_star_info.mass,
-             'radius': result_star_info.radius, 'mass': result_star_info.mass,
              'Teff_star': result_star_info.teff, 'Teff_star_lerr': 200, 'Teff_star_uerr': 200,
-             'Teff': result_star_info.teff,
              'logg': result_star_info.logg, 'logg_err': result_star_info.logg_err,
-             'ld_a': ld_a, 'ld_b': ld_b, 'lum': result_star_info.lum,
+             'ld_a': ld_a, 'ld_b': ld_b,
              'feh': result_star_info.feh,
              'feh_err': result_star_info.feh_err, 'v': result_star_info.v, 'v_err': result_star_info.v_err,
              'j': result_star_info.j, 'j_err': result_star_info.j_err,
              'k': result_star_info.k, 'k_err': result_star_info.k_err,
              'h': result_star_info.h, 'h_err': result_star_info.h_err,
-             'kp': result_star_info.kp, 'dist_arcsec': 0},
+             'kp': result_star_info.kp},
             ignore_index=True)
         star_df.to_csv(object_dir + "params_star.csv", index=False)
         return result_star_info
