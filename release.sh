@@ -31,7 +31,7 @@ if ! [[ -z ${tests_results} ]]; then
   python3 -m pip install pybind11
   python3 setup.py install
   python3 -m pip list --format=freeze > requirements.txt
-  deactivate
+  ~/anaconda3/bin/deactivate
   git_tag=$1
   git pull
   sed -i '5s/.*/version = "'${git_tag}'"/' setup.py
