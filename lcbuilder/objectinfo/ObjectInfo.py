@@ -22,7 +22,8 @@ class ObjectInfo(ABC):
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=100,
                  oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1,
-                 truncate_border=0, lower_outliers_sigma: float = None, initial_trim: float = None):
+                 truncate_border=0, lower_outliers_sigma: float = None, initial_trim: float = None,
+                 search_engine='cpu'):
         self.initial_mask = initial_mask
         self.initial_transit_mask = initial_transit_mask
         self.star_info = star_info
@@ -47,6 +48,7 @@ class ObjectInfo(ABC):
         self.truncate_border = truncate_border
         self.lower_outliers_sigma = lower_outliers_sigma
         self.initial_trim = initial_trim
+        self.search_engine = search_engine
 
     @abstractmethod
     def sherlock_id(self):

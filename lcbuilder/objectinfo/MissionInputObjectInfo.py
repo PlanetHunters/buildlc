@@ -14,7 +14,8 @@ class MissionInputObjectInfo(ObjectInfo):
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
                  oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1,
-                 truncate_border=0, lower_outliers_sigma: float = None, initial_trim: float = None
+                 truncate_border=0, lower_outliers_sigma: float = None, initial_trim: float = None,
+                 search_engine='cpu'
                  ):
         """
         @param mission_id: the mission identifier. TIC ##### for TESS, KIC ##### for Kepler and EPIC ##### for K2.
@@ -42,6 +43,7 @@ class MissionInputObjectInfo(ObjectInfo):
         @param truncate_border the cadences to be eliminated for each 0.5 days separation in days
         @param float lower_outliers_sigma: sigma used to cut lower outliers.
         @param float initial_trim: allowed measurements in days before trimming
+        @param search_engine: cpu|gpu|gpu_approximate to select the device and mode of search
         """
         super().__init__(initial_mask, initial_transit_mask, star_info, None,
                          outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours, smooth_enabled,
@@ -49,7 +51,7 @@ class MissionInputObjectInfo(ObjectInfo):
                          prepare_algorithm, reduce_simple_oscillations, oscillation_snr_threshold,
                          oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
                          oscillation_max_period, binning, truncate_border, lower_outliers_sigma=lower_outliers_sigma,
-                         initial_trim=initial_trim)
+                         initial_trim=initial_trim, search_engine=search_engine)
         self.id = mission_id
         self.input_file = input_file
 

@@ -138,7 +138,7 @@ class LcBuilder:
                                                              object_info.oscillation_ws_scale,
                                                              object_info.oscillation_min_period,
                                                              object_info.oscillation_max_period,
-                                                             cpus=cpus)
+                                                             cpus=cpus, search_engine=object_info.search_engine)
         if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
@@ -224,8 +224,9 @@ class LcBuilder:
 
     def __reduce_simple_oscillations(self, object_dir, object_id, time, flux, star_info, snr_threshold=4,
                                      amplitude_threshold=0.1, window_size_scale=60, oscillation_min_period=0.002,
-                                     oscillation_max_period=0.2, cpus=multiprocessing.cpu_count() - 1):
-        no_transits_time, no_transits_flux = self.__reduce_visible_transits(time, flux, star_info, cpus)
+                                     oscillation_max_period=0.2, cpus=multiprocessing.cpu_count() - 1,
+                                     search_engine='cpu'):
+        no_transits_time, no_transits_flux = self.__reduce_visible_transits(time, flux, star_info, cpus, search_engine)
         snr = 10
         number = 0
         pulsations_df = pandas.DataFrame(columns=['period_s', 'frequency_microHz', 'amplitude', 'phase', 'snr',
@@ -288,7 +289,7 @@ class LcBuilder:
             pulsations_df.to_csv(sa_dir + "signals.csv", index=False)
         return flux
 
-    def __reduce_visible_transits(self, time, flux, star_info, cpus):
+    def __reduce_visible_transits(self, time, flux, star_info, cpus, search_engine):
         min_sde = 13
         sde = min_sde + 1
         logging.info("Searching for obvious transits to mask them before reducing the stellar pulsations")
@@ -302,7 +303,9 @@ class LcBuilder:
                           "period_max": 2, "n_transits_min": 2, "show_progress_bar": False,
                           "duration_grid_step": 1.15,
                           "use_threads": cpus, "oversampling_factor": oversampling,
-                          "period_grid": period_grid}
+                          "period_grid": period_grid,
+                          'use_gpu': search_engine == 'gpu' or search_engine == 'gpu_approximate',
+                          'gpu_approximate': search_engine == 'gpu_approximate'}
             if star_info.ld_coefficients is not None:
                 power_args["u"] = star_info.ld_coefficients
             power_args["R_star"] = star_info.radius
@@ -640,7 +643,7 @@ class LcBuilder:
                           oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
                           oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1, truncate_border=0,
                           lower_outliers_sigma: float = None, initial_trim: float = None,
-                          initial_trim_sectors: int = None):
+                          initial_trim_sectors: int = None, search_engine='cpu'):
         mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
@@ -656,7 +659,7 @@ class LcBuilder:
                                      oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
                                      oscillation_max_period, binning, eleanor_corr_flux, truncate_border,
                                      lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim,
-                                     initial_trim_sectors=initial_trim_sectors)
+                                     initial_trim_sectors=initial_trim_sectors, search_engine=search_engine)
         elif mission is not None and file is not None:
             return MissionInputObjectInfo(target_name, file, initial_mask, initial_transit_mask,
                                           star_info, outliers_sigma, high_rms_enabled, high_rms_threshold,
@@ -665,7 +668,8 @@ class LcBuilder:
                                           reduce_simple_oscillations, oscillation_snr_threshold,
                                           oscillation_amplitude_threshold, oscillation_ws_scale,
                                           oscillation_min_period, oscillation_max_period, binning, truncate_border,
-                                          lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim)
+                                          lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim,
+                                          search_engine=search_engine)
         elif mission is None and file is not None:
             return InputObjectInfo(file, initial_mask, initial_transit_mask, star_info,
                                    outliers_sigma, high_rms_enabled, high_rms_threshold, high_rms_bin_hours,
@@ -674,7 +678,8 @@ class LcBuilder:
                                    reduce_simple_oscillations, oscillation_snr_threshold,
                                    oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
                                    oscillation_max_period, binning, truncate_border,
-                                   lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim)
+                                   lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim,
+                                   search_engine=search_engine)
         else:
             raise ValueError(
                 "Invalid target definition with target_name={}, mission={}, id={}, coords={}, sectors={}, file={}, "
