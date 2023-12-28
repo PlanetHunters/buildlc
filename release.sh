@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ~/anaconda3/etc/profile.d/conda.sh
+conda activate base
 rm tests.log
 rm dist* -r
 rm -r .tox
@@ -21,17 +23,17 @@ if ! [[ -z ${tests_results} ]]; then
   rm -R lcbuilder-reqs
   conda remove -n lcbuilder-reqs --all -y
   set -e
-  conda create -n lcbuilder-reqs python=3.10 anaconda -y
-  ~/anaconda3/bin/activate lcbuilder-reqs
+  conda create -n lcbuilder-reqs python=3.10 -y
+  conda activate lcbuilder-reqs
   python3 -m pip install pip -U
   python3 -m pip install setuptools -U
   python3 -m pip install Cython -U
   python3 -m pip install extension-helpers -U
   python3 -m pip install numpy==1.23.5
   python3 -m pip install pybind11
-  python3 setup.py install
+  python3 -m pip install .
   python3 -m pip list --format=freeze > requirements.txt
-  ~/anaconda3/bin/deactivate
+  conda deactivate
   git_tag=$1
   git pull
   sed -i '5s/.*/version = "'${git_tag}'"/' setup.py
