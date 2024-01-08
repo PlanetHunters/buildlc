@@ -453,12 +453,14 @@ class LcBuilder:
         ld_b = result_star_info.ld_coefficients[1] if result_star_info.ld_coefficients is not None else None
         star_df = star_df.append(
             {'obj_id': object_id, 'ra': result_star_info.ra, 'dec': result_star_info.dec,
-             'R_star': result_star_info.radius,
+             'R_star': result_star_info.radius, 'radius': result_star_info.radius,
              'R_star_lerr': result_star_info.radius - result_star_info.radius_min,
              'R_star_uerr': result_star_info.radius_max - result_star_info.radius,
-             'M_star': result_star_info.mass, 'M_star_lerr': result_star_info.mass - result_star_info.mass_min,
+             'M_star': result_star_info.mass, 'mass': result_star_info.mass,
+             'M_star_lerr': result_star_info.mass - result_star_info.mass_min,
              'M_star_uerr': result_star_info.mass_max - result_star_info.mass,
-             'Teff_star': result_star_info.teff, 'Teff_star_lerr': 200, 'Teff_star_uerr': 200,
+             'Teff_star': result_star_info.teff, 'Teff': result_star_info.teff,
+             'Teff_star_lerr': 200, 'Teff_star_uerr': 200,
              'logg': result_star_info.logg, 'logg_err': result_star_info.logg_err,
              'ld_a': ld_a, 'ld_b': ld_b,
              'feh': result_star_info.feh,
@@ -466,7 +468,7 @@ class LcBuilder:
              'j': result_star_info.j, 'j_err': result_star_info.j_err,
              'k': result_star_info.k, 'k_err': result_star_info.k_err,
              'h': result_star_info.h, 'h_err': result_star_info.h_err,
-             'kp': result_star_info.kp},
+             'kp': result_star_info.kp, 'lum': result_star_info.lum},
             ignore_index=True)
         star_df.to_csv(object_dir + "params_star.csv", index=False)
         return result_star_info
