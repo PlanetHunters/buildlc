@@ -9,8 +9,8 @@ class HarmonicSelector:
 
     @staticmethod
     def multiple_of(a, b, tolerance=0.05):
-        a = np.float(a)
-        b = np.float(b)
+        a = float(a)
+        b = float(b)
         if a <= 0 or b <= 0:
             return 0
         mod_ab = a % b
