@@ -272,10 +272,12 @@ class LcBuilder:
                     logging.info(
                         "Reducing pulsation with period %sd, flux amplitude of %s, phase at %s and snr %s",
                         period, A, p, snr)
-                    pulsations_df = pulsations_df.append(
-                        {'period_s': period * 24 * 3600, 'frequency_microHz': frequency / 24 / 3600 * 1000000,
-                         'amplitude': A, 'phase': p, 'snr': snr, 'number': number},
-                        ignore_index=True)
+                    pulsations_df = pandas.concat([pulsations_df,
+                                                      pandas.DataFrame([{'period_s': period * 24 * 3600,
+                                                                         'frequency_microHz': frequency / 24 / 3600 * 1000000,
+                                                                         'amplitude': A, 'phase': p,
+                                                                         'snr': snr, 'number': number}])],
+                                                     ignore_index=True)
                     self.__plot_pulsation_fit(sa_dir, object_id, time, flux, fit_flux, period, number)
                     flux = flux_corr
                     no_transits_flux = no_transits_flux - fit_no_transit_flux + 1
@@ -451,25 +453,25 @@ class LcBuilder:
                                             'Teff_star_uerr', 'ld_a', 'ld_b'])
         ld_a = result_star_info.ld_coefficients[0] if result_star_info.ld_coefficients is not None else None
         ld_b = result_star_info.ld_coefficients[1] if result_star_info.ld_coefficients is not None else None
-        star_df = star_df.append(
-            {'obj_id': object_id, 'ra': result_star_info.ra, 'dec': result_star_info.dec,
-             'R_star': result_star_info.radius, 'radius': result_star_info.radius,
-             'R_star_lerr': result_star_info.radius - result_star_info.radius_min,
-             'R_star_uerr': result_star_info.radius_max - result_star_info.radius,
-             'M_star': result_star_info.mass, 'mass': result_star_info.mass,
-             'M_star_lerr': result_star_info.mass - result_star_info.mass_min,
-             'M_star_uerr': result_star_info.mass_max - result_star_info.mass,
-             'Teff_star': result_star_info.teff, 'Teff': result_star_info.teff,
-             'Teff_star_lerr': 200, 'Teff_star_uerr': 200,
-             'logg': result_star_info.logg, 'logg_err': result_star_info.logg_err,
-             'ld_a': ld_a, 'ld_b': ld_b,
-             'feh': result_star_info.feh,
-             'feh_err': result_star_info.feh_err, 'v': result_star_info.v, 'v_err': result_star_info.v_err,
-             'j': result_star_info.j, 'j_err': result_star_info.j_err,
-             'k': result_star_info.k, 'k_err': result_star_info.k_err,
-             'h': result_star_info.h, 'h_err': result_star_info.h_err,
-             'kp': result_star_info.kp, 'lum': result_star_info.lum},
-            ignore_index=True)
+        star_df = pandas.concat([star_df,
+                       pandas.DataFrame([{'obj_id': object_id, 'ra': result_star_info.ra, 'dec': result_star_info.dec,
+                         'R_star': result_star_info.radius, 'radius': result_star_info.radius,
+                         'R_star_lerr': result_star_info.radius - result_star_info.radius_min,
+                         'R_star_uerr': result_star_info.radius_max - result_star_info.radius,
+                         'M_star': result_star_info.mass, 'mass': result_star_info.mass,
+                         'M_star_lerr': result_star_info.mass - result_star_info.mass_min,
+                         'M_star_uerr': result_star_info.mass_max - result_star_info.mass,
+                         'Teff_star': result_star_info.teff, 'Teff': result_star_info.teff,
+                         'Teff_star_lerr': 200, 'Teff_star_uerr': 200,
+                         'logg': result_star_info.logg, 'logg_err': result_star_info.logg_err,
+                         'ld_a': ld_a, 'ld_b': ld_b,
+                         'feh': result_star_info.feh,
+                         'feh_err': result_star_info.feh_err, 'v': result_star_info.v, 'v_err': result_star_info.v_err,
+                         'j': result_star_info.j, 'j_err': result_star_info.j_err,
+                         'k': result_star_info.k, 'k_err': result_star_info.k_err,
+                         'h': result_star_info.h, 'h_err': result_star_info.h_err,
+                         'kp': result_star_info.kp, 'lum': result_star_info.lum}])],
+                      ignore_index=True)
         star_df.to_csv(object_dir + "params_star.csv", index=False)
         return result_star_info
 
