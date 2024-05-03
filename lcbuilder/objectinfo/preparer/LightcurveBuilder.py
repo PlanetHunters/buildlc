@@ -72,6 +72,8 @@ class LightcurveBuilder(ABC):
                                                   campaign=campaigns, author=author, limit=sectors_limit)
         lcf = lcf_search_results.download_all(download_dir=download_dir,
                                               quality_bitmask=quality_bitmask)
+        if lcf == None:
+            raise ValueError(f"There are no LightCurves for the given mission {mission}, author {author}, cadence {cadence} and sectors {sectors}")
         sort_indexes = LightcurveBuilder.sort_lc_data(lcf, mission_prefix)
         return lcf[sort_indexes]
 
@@ -84,6 +86,8 @@ class LightcurveBuilder(ABC):
                                          sector=sectors, quarter=quarters,
                                          campaign=campaigns, author=author, limit=sectors_limit)\
             .download_all(download_dir=download_dir, cutout_size=cutout_size, quality_bitmask=quality_bitmask)
+        if tpfs == None or len(tpfs) == 0:
+            tpfs = lightkurve.search_tesscut(target_name, sectors).download_all(download_dir=download_dir, cutout_size=cutout_size, quality_bitmask=quality_bitmask)
         sort_indexes = LightcurveBuilder.sort_lc_data(tpfs, mission_prefix)
         return tpfs[sort_indexes]
 
@@ -98,28 +102,37 @@ class LightcurveBuilder(ABC):
         centroids_y = []
         motion_x = []
         motion_y = []
-        [time.append(fit_file[1].data['TIME']) for fit_file in fit_files]
-        [flux.append(fit_file[1].data['PDCSAP_FLUX']) for fit_file in fit_files]
-        [flux_err.append(fit_file[1].data['PDCSAP_FLUX_ERR']) for fit_file in fit_files]
-        [background_flux.append(fit_file[1].data['SAP_BKG']) for fit_file in fit_files]
-        try:
-            [quality.append(fit_file[1].data['QUALITY']) for fit_file in fit_files]
-        except KeyError:
-            logging.info("QUALITY info is not available.")
-            [quality.append(np.full(len(fit_file[1].data['TIME']), np.nan)) for fit_file in fit_files]
-        [centroids_x.append(fit_file[1].data['MOM_CENTR1']) for fit_file in fit_files]
-        [centroids_y.append(fit_file[1].data['MOM_CENTR2']) for fit_file in fit_files]
-        [motion_x.append(fit_file[1].data['POS_CORR1']) for fit_file in fit_files]
-        [motion_y.append(fit_file[1].data['POS_CORR2']) for fit_file in fit_files]
+        for fit_file in fit_files:
+            time.append(fit_file[1].data['TIME'])
+            try:
+                flux.append(fit_file[1].data['PDCSAP_FLUX'])
+                flux_err.append(fit_file[1].data['PDCSAP_FLUX_ERR'])
+            except:
+                flux.append(fit_file[1].data['KSPSAP_FLUX'])
+                flux_err.append(fit_file[1].data['KSPSAP_FLUX_ERR'])
+            background_flux.append(fit_file[1].data['SAP_BKG'])
+            try:
+                quality.append(fit_file[1].data['QUALITY'])
+            except KeyError:
+                logging.info("QUALITY info is not available.")
+                quality.append(np.full(len(fit_file[1].data['TIME']), np.nan))
+            try:
+                centroids_x.append(fit_file[1].data['MOM_CENTR1'])
+                centroids_y.append(fit_file[1].data['MOM_CENTR2'])
+                motion_x.append(fit_file[1].data['POS_CORR1'])
+                motion_y.append(fit_file[1].data['POS_CORR2'])
+            except:
+                logging.warning("No centroid and position data in light curve")
         time = np.concatenate(time)
         flux = np.concatenate(flux)
         flux_err = np.concatenate(flux_err)
         background_flux = np.concatenate(background_flux)
         quality = np.concatenate(quality)
-        centroids_x = np.concatenate(centroids_x)
-        centroids_y = np.concatenate(centroids_y)
-        motion_x = np.concatenate(motion_x)
-        motion_y = np.concatenate(motion_y)
+        if len(centroids_x) > 0:
+            centroids_x = np.concatenate(centroids_x)
+            centroids_y = np.concatenate(centroids_y)
+            motion_x = np.concatenate(motion_x)
+            motion_y = np.concatenate(motion_y)
         lc_data = pandas.DataFrame(columns=['time', 'flux', 'flux_err', 'background_flux', 'quality', 'centroids_x',
                                             'centroids_y', 'motion_x', 'motion_y'])
         lc_data['time'] = time
@@ -127,8 +140,9 @@ class LightcurveBuilder(ABC):
         lc_data['flux_err'] = flux_err
         lc_data['background_flux'] = background_flux
         lc_data['quality'] = quality
-        lc_data['centroids_x'] = centroids_x
-        lc_data['centroids_y'] = centroids_y
-        lc_data['motion_x'] = motion_x
-        lc_data['motion_y'] = motion_y
+        if len(centroids_x) > 0:
+            lc_data['centroids_x'] = centroids_x
+            lc_data['centroids_y'] = centroids_y
+            lc_data['motion_x'] = motion_x
+            lc_data['motion_y'] = motion_y
         return lc_data

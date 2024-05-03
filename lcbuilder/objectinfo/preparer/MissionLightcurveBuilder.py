@@ -55,11 +55,28 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         tokens = tokens if tokens is not None else "all"
         transits_min_count = 1
         apertures = {}
-        tpf_search_results = lk.search_targetpixelfile(str(mission_id))
+        author_available_products = author if author != constants.ELEANOR_AUTHOR else self.authors[mission + author_extension]
+        tpf_search_results = lk.search_targetpixelfile(str(mission_id), author=author_available_products)
+        lc_search_results = lk.search_lightcurve(str(mission_id), author=author_available_products)
+        tpf_searchcut_results = lk.search_tesscut(str(mission_id))
+        if len(tpf_search_results) == 0:
+            logging.warning("No TPF data with author %s", author_available_products)
         for tpf_search_result in tpf_search_results:
-            logging.info("There is data for Mission: %s, Year %.0f, Author: %s, ExpTime: %.0f",
-                         tpf_search_result.mission[0], tpf_search_result.year[0], tpf_search_result.author[0],
+            logging.info("There are TPF data with author %s: %s, Year %.0f, Author: %s, ExpTime: %.0f",
+                         author_available_products, tpf_search_result.mission[0], tpf_search_result.year[0], tpf_search_result.author[0],
                          tpf_search_result.exptime[0].value)
+        if len(tpf_searchcut_results) == 0:
+            logging.warning("No TessCut data with author %s", author_available_products)
+        for tpf_searchcut_result in tpf_searchcut_results:
+            logging.info("There are TessCut data author %s: %s, Year %.0f, Author: %s, ExpTime: %.0f",
+                         author_available_products, tpf_searchcut_result.mission[0], tpf_searchcut_result.year[0], tpf_searchcut_result.author[0],
+                         tpf_searchcut_result.exptime[0].value)
+        if len(lc_search_results) == 0:
+            logging.warning("No LightCurve data with author %s", author_available_products)
+        for lc_search_result in lc_search_results:
+            logging.info("There are LightCurve data author %s: %s, Year %.0f, Author: %s, ExpTime: %.0f",
+                         author_available_products, lc_search_result.mission[0], lc_search_result.year[0], lc_search_result.author[0],
+                         lc_search_result.exptime[0].value)
         tpfs_dir = sherlock_dir + "/tpfs/"
         if not os.path.exists(tpfs_dir):
             os.mkdir(tpfs_dir)
