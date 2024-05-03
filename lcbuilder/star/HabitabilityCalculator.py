@@ -173,7 +173,7 @@ class HabitabilityCalculator:
 
     def _calculate_semi_amplitude_err(self, period: float, period_err: float, planet_mass: float, planet_mass_err: float, star_mass: float, star_mass_err: float, constant: float):
         return constant * np.sqrt(
-            ((1 / period) ** (1 / 3) * ((star_mass * planet_mass) ** (2 / 3) + (star_mass + planet_mass) ** (-1 / 3) * (-2 / 3) * planet_mass) * (star_mass + planet_mass) ** (-4 / 3) * planet_mass_err) ** 2 +
+            ((1 / period) ** (1 / 3) * ((star_mass + planet_mass) ** (2 / 3) + (star_mass + planet_mass) ** (-1 / 3) * (-2 / 3) * planet_mass) * (star_mass + planet_mass) ** (-4 / 3) * planet_mass_err) ** 2 +
             (((1 / period) ** (-2 / 3) * (-1 / 3 / period ** 2 * planet_mass * (star_mass + planet_mass) ** (-2 / 3))) * period_err) ** 2 +
             (((star_mass + planet_mass) ** (-5 / 3) * (-2) / 3 * (1 / period) ** (1 / 3) * planet_mass) * star_mass_err) ** 2
         )
