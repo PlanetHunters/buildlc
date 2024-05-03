@@ -1,4 +1,8 @@
 import numpy as np
+from lcbuilder.helper import LcbuilderHelper
+from astropy import units as u
+from astropy.modeling.models import BlackBody
+
 
 '''Calculates the Habitability Zone of a star based on the Kopparapu et al (2013) equations. These equations are only
 valid for stars between 2600 K < Teff < 7200 K.'''
@@ -121,6 +125,58 @@ class HabitabilityCalculator:
         mass_kg = star_mass * 2.e30
         a1 = (self.G * mass_kg*period_seconds ** 2/4. / (np.pi ** 2)) ** (1. / 3.)
         return a1 / 1.496e11
+
+    def calculate_teq(self, star_mass, star_radius, period, star_teff):
+        a = self.calculate_semi_major_axis(period, star_mass)
+        R_s_a = (star_radius / LcbuilderHelper.convert_from_to(a, u.au, u.R_sun))
+        return star_teff * R_s_a ** 0.5 / 4 ** 0.25
+
+    def get_TSM_scale_factor(self, radius):
+        if radius <= 1.5:
+            return 0.19
+        elif radius <= 2.75:
+            return 1.26
+        elif radius <= 4:
+            return 1.28
+        else:
+            return 1.15
+
+    def calculate_TSM(self, planet_radius, planet_mass, t_eq, star_radius, star_j_mag):
+        return self.get_TSM_scale_factor(planet_radius) * t_eq * planet_radius ** 3 / (planet_mass * star_radius ** 2) * 10 ** (-star_j_mag / 5)
+
+    def calculate_ESM(self, planet_radius, teq, star_radius, star_teff, star_k_mag):
+        conversion = (1 * u.earthRad / (1 * u.solRad)).decompose().value ** 2
+        depth = 10 ** 6 * conversion * (planet_radius / star_radius) ** 2
+        ESM_bb_Tday = BlackBody(temperature=1.1 * teq * u.K)
+        ESM_bb_Teff = BlackBody(temperature=star_teff * u.K)
+        wavelength = 7.5 * u.micron
+        part1 = (ESM_bb_Tday(wavelength) / ESM_bb_Teff(wavelength)).value
+        part2 = depth * 10 ** (-star_k_mag / 5)
+        return 4.29 * part1 * part2
+
+    def calculate_semi_amplitude(self, period: float, period_low_err: float, period_up_err: float, planet_mass: float, planet_mass_low_err: float, planet_mass_up_err: float,
+                                 star_mass: float, star_mass_low_err: float, star_mass_up_err: float, eccentricity: float = 0, inclination: float = np.pi/2):
+        planet_mass = LcbuilderHelper.convert_from_to(planet_mass, u.M_earth, u.kg)
+        planet_mass_up_err = LcbuilderHelper.convert_from_to(planet_mass_up_err, u.M_earth, u.kg)
+        planet_mass_low_err = LcbuilderHelper.convert_from_to(planet_mass_low_err, u.M_earth, u.kg)
+        star_mass = LcbuilderHelper.convert_from_to(star_mass, u.M_sun, u.kg)
+        star_mass_up_err = LcbuilderHelper.convert_from_to(star_mass_up_err, u.M_sun, u.kg)
+        star_mass_low_err = LcbuilderHelper.convert_from_to(star_mass_low_err, u.M_sun, u.kg)
+        period = LcbuilderHelper.convert_from_to(period, u.day, u.s)
+        period_up_err = LcbuilderHelper.convert_from_to(period_up_err, u.day, u.s)
+        period_low_err = LcbuilderHelper.convert_from_to(period_low_err, u.day, u.s)
+        constant = (2 * np.pi * HabitabilityCalculator.G) ** (1 / 3) * np.sin(inclination) * (1 / (np.sqrt(1 - eccentricity ** 2)))
+        semi_amplitude = constant * (1 / period) ** (1 / 3) * planet_mass / ((star_mass + planet_mass) ** (2 / 3))
+        semi_amplitude_low_err = self._calculate_semi_amplitude_err(period, period_low_err, planet_mass, planet_mass_low_err, star_mass, star_mass_low_err, constant)
+        semi_amplitude_up_err = self._calculate_semi_amplitude_err(period, period_up_err, planet_mass, planet_mass_up_err, star_mass, star_mass_up_err, constant)
+        return semi_amplitude, semi_amplitude_low_err, semi_amplitude_up_err
+
+    def _calculate_semi_amplitude_err(self, period: float, period_err: float, planet_mass: float, planet_mass_err: float, star_mass: float, star_mass_err: float, constant: float):
+        return constant * np.sqrt(
+            ((1 / period) ** (1 / 3) * ((star_mass * planet_mass) ** (2 / 3) + (star_mass + planet_mass) ** (-1 / 3) * (-2 / 3) * planet_mass) * (star_mass + planet_mass) ** (-4 / 3) * planet_mass_err) ** 2 +
+            (((1 / period) ** (-2 / 3) * (-1 / 3 / period ** 2 * planet_mass * (star_mass + planet_mass) ** (-2 / 3))) * period_err) ** 2 +
+            (((star_mass + planet_mass) ** (-5 / 3) * (-2) / 3 * (1 / period) ** (1 / 3) * planet_mass) * star_mass_err) ** 2
+        )
 
     def calculate_hz_score(self, t_eff, star_mass, luminosity, period):
         """
