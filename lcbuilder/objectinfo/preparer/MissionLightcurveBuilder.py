@@ -81,6 +81,7 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         if not os.path.exists(tpfs_dir):
             os.mkdir(tpfs_dir)
         lc_data = None
+        sectors_to_start_end_times = {}
         if object_info.apertures is None:
             if isinstance(cadence, (int, float)) and cadence >= 600 and \
                     mission_prefix == constants.MISSION_ID_TESS and author == constants.ELEANOR_AUTHOR:
@@ -196,12 +197,18 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                         sector = tpf.sector
                     if mission_prefix == constants.MISSION_ID_KEPLER_2:
                         sector = tpf.campaign
+                    sectors_to_start_end_times[sector] = (tpf.time[0].value, tpf.time[-1].value)
                     apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
+                    try:
+                        logging.info("Sector %s dates: Start (%s) End(%s)", sector, tpf.meta['DATE-OBS'], tpf.meta['DATE-END'])
+                    except:
+                        logging.exception("Problem extracting sector dates from TPF")
                 for i in range(0, len(lcf)):
                     if lcf.data[i].label == mission_id:
                         if lc is None:
                             lc = lcf.data[i].normalize()
                         else:
+                            # Lightkurve removes the custom sectors field when calling append
                             lc = lc.append(lcf.data[i].normalize())
                     else:
                         matching_objects.append(lcf.data[i].label)
@@ -313,7 +320,8 @@ class MissionLightcurveBuilder(LightcurveBuilder):
         # flux_std = np.nanstd(lc.flux)
         # for index, time in enumerate(lc.time.value):
         #     lc.flux[index] = lc.flux[index].value + np.random.normal(0, 2 * flux_std / (1 + index / 700), 1)
-        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures)
+        return LcBuild(lc, lc_data, star_info, transits_min_count, cadence, None, sectors, source, apertures,
+                       sectors_to_start_end_times=sectors_to_start_end_times)
 
     def __calculate_transits_min_count(self, len_data):
         return 1 if len_data == 1 else 2

@@ -3,9 +3,10 @@ from lcbuilder.helper import LcbuilderHelper
 from astropy import units as u
 from astropy.modeling.models import BlackBody
 
-
 '''Calculates the Habitability Zone of a star based on the Kopparapu et al (2013) equations. These equations are only
 valid for stars between 2600 K < Teff < 7200 K.'''
+
+
 class HabitabilityCalculator:
     sun_luminosity = 1.
     G = 6.674e-11  # m3 kg-1 s-2
@@ -123,13 +124,50 @@ class HabitabilityCalculator:
     def calculate_semi_major_axis(self, period, star_mass):
         period_seconds = period * 24. * 3600.
         mass_kg = star_mass * 2.e30
-        a1 = (self.G * mass_kg*period_seconds ** 2/4. / (np.pi ** 2)) ** (1. / 3.)
+        a1 = (self.G * mass_kg * period_seconds ** 2 / 4. / (np.pi ** 2)) ** (1. / 3.)
         return a1 / 1.496e11
 
-    def calculate_teq(self, star_mass, star_radius, period, star_teff):
+    def calculate_semi_major_axis_with_err(self, period, period_low_err, period_up_err, star_mass, star_mass_low_err,
+                                           star_mass_up_err):
         a = self.calculate_semi_major_axis(period, star_mass)
-        R_s_a = (star_radius / LcbuilderHelper.convert_from_to(a, u.au, u.R_sun))
-        return star_teff * R_s_a ** 0.5 / 4 ** 0.25
+        constant = (self.G / 4 / np.pi ** 2) ** (1 / 3)
+        a_low_err = self.calculate_semi_major_axis_err(constant, period, period_low_err, star_mass, star_mass_low_err)
+        a_up_err = self.calculate_semi_major_axis_err(constant, period, period_up_err, star_mass, star_mass_up_err)
+        return a, a_low_err, a_up_err
+
+    def calculate_semi_major_axis_err(self, constant, period, period_err, star_mass, star_mass_err):
+        period_seconds = period * 24. * 3600.
+        period_err_seconds = period_err * 24. * 3600.
+        star_mass_kg = star_mass * 2.e30
+        star_mass_err_kg = star_mass_err * 2.e30
+        return constant * np.sqrt(
+            (((star_mass_kg * period_seconds ** 2) ** (-2 / 3) / 3 * period_seconds ** 2) * star_mass_err_kg) ** 2 +
+            (((star_mass_kg * period_seconds ** 2) ** (
+                        -2 / 3) * 2 / 3 * star_mass_kg * period_seconds) * period_err_seconds) ** 2
+        ) / 1.496e11
+
+    def calculate_teq(self, star_mass, star_mass_low_err, star_mass_up_err, star_radius, star_radius_low_err,
+                      star_radius_up_err,
+                      period, period_low_err, period_up_err, star_teff, star_teff_low_err, star_teff_up_err):
+        a, a_low_err, a_up_err = self.calculate_semi_major_axis_with_err(period, period_low_err, period_up_err,
+                                                                         star_mass, star_mass_low_err, star_mass_up_err)
+        a_rsun = LcbuilderHelper.convert_from_to(a, u.au, u.R_sun)
+        a_low_err_rsun = LcbuilderHelper.convert_from_to(a_low_err, u.au, u.R_sun)
+        a_up_err_rsun = LcbuilderHelper.convert_from_to(a_up_err, u.au, u.R_sun)
+        constant = 1 / 4 ** 0.25
+        teq = constant * star_teff * star_radius / a_rsun ** 0.5
+        teq_low_err = self._calculate_teq_err(constant, a_rsun, a_low_err_rsun, star_radius, star_radius_low_err,
+                                              star_teff, star_teff_low_err)
+        teq_up_err = self._calculate_teq_err(constant, a_rsun, a_up_err_rsun, star_radius, star_radius_up_err,
+                                             star_teff, star_teff_up_err)
+        return teq, teq_low_err, teq_up_err
+
+    def _calculate_teq_err(self, constant, a, a_err, star_radius, star_radius_err, star_teff, star_teff_err):
+        return constant * np.sqrt(
+            ((star_teff / a) * star_radius_err) ** 2 +
+            ((star_radius / a) * star_teff) ** 2 +
+            ((-star_teff / a ** 2 * star_radius) * a_err) ** 2
+        )
 
     def get_TSM_scale_factor(self, radius):
         if radius <= 1.5:
@@ -141,21 +179,99 @@ class HabitabilityCalculator:
         else:
             return 1.15
 
-    def calculate_TSM(self, planet_radius, planet_mass, t_eq, star_radius, star_j_mag):
-        return self.get_TSM_scale_factor(planet_radius) * t_eq * planet_radius ** 3 / (planet_mass * star_radius ** 2) * 10 ** (-star_j_mag / 5)
+    def calculate_TSM(self, planet_radius, planet_radius_low_err, planet_radius_up_err, planet_mass,
+                      planet_mass_low_err, planet_mass_up_err,
+                      t_eq, t_eq_low_err, t_eq_up_err, star_radius, star_radius_low_err, star_radius_up_err,
+                      star_j_mag):
+        """
+        Calculates the Transmission Spectroscopy Metric (TSM).
+        :param planet_radius: planet radius in earth radii
+        :param planet_radius_low_err: planet radius lower uncertainty
+        :param planet_radius_up_err: planet radius upper uncertainty
+        :param planet_mass: planet mass
+        :param planet_mass_low_err: planet mass lower uncertainty
+        :param planet_mass_up_err: planet mass upper uncertainty
+        :param t_eq: planet equilibrium temperature
+        :param t_eq_low_err: teq lower uncertainty
+        :param t_eq_up_err: teq upper uncertaint
+        :param star_radius: star radius in sun radii
+        :param star_radius_low_err: star radius lower uncertainty
+        :param star_radius_up_err: star radius upper uncertainty
+        :param star_j_mag: star J magnitude
+        :return: the tsm and its lower and upper uncertainties
+        """
+        constant = self.get_TSM_scale_factor(planet_radius) * 10 ** (-star_j_mag / 5)
+        tsm = constant * t_eq * planet_radius ** 3 / (planet_mass * star_radius ** 2)
+        tsm_up_err = self._calculate_TSM_err(constant, planet_radius, planet_radius_up_err, planet_mass,
+                                             planet_mass_up_err, t_eq, t_eq_up_err,
+                                             star_radius, star_radius_up_err)
+        tsm_low_err = self._calculate_TSM_err(constant, planet_radius, planet_radius_low_err, planet_mass,
+                                              planet_mass_low_err, t_eq, t_eq_low_err,
+                                              star_radius, star_radius_low_err)
+        return tsm, tsm_low_err, tsm_up_err
 
-    def calculate_ESM(self, planet_radius, teq, star_radius, star_teff, star_k_mag):
-        conversion = (1 * u.earthRad / (1 * u.solRad)).decompose().value ** 2
-        depth = 10 ** 6 * conversion * (planet_radius / star_radius) ** 2
+    def _calculate_TSM_err(self, constant, planet_radius, planet_radius_err, planet_mass, planet_mass_err, t_eq,
+                           t_eq_err, star_radius, star_radius_err):
+        return constant * np.sqrt(((planet_mass * planet_radius ** 3 / (
+                    planet_mass * star_radius ** 2) ** 2 * star_radius ** 2) * t_eq_err) ** 2 +
+                                  ((t_eq * 3 / (
+                                              planet_mass * star_radius ** 2) ** 2 * planet_radius ** 2 * planet_mass * star_radius ** 2) * planet_radius_err) ** 2 +
+                                  ((-(t_eq / (
+                                              planet_mass * star_radius ** 2) ** 2 * planet_radius ** 3 * star_radius ** 2)) * planet_mass_err) ** 2 +
+                                  ((-t_eq * 2 / (
+                                              planet_mass * star_radius ** 2) ** 2 * planet_radius ** 3 * planet_mass * star_radius) * star_radius_err) ** 2)
+
+    def calculate_ESM(self, depth, depth_low_err, depth_up_err, teq, teq_low_err, teq_up_err, star_teff,
+                      star_teff_low_err, star_teff_up_err, star_k_mag):
+        """
+        Calculates Emission Spectroscopy Metric (ESM). The uuncertainty is computed from the depth error and the black body difference between the value
+        obtained for the teff and teq and their uncertainties.
+        :param depth: the depth in ppts
+        :param depth_low_err: depth lower uncertainty
+        :param depth_up_err: depth upper uncertainty
+        :param teq: planet equilibrium temperature
+        :param teq_low_err: teq lower uncertainty
+        :param teq_up_err: teq upper uncertainty
+        :param star_teff: star effective temperature
+        :param star_teff_low_err: teff lower uncertainty
+        :param star_teff_up_err: teff upper uncertainty
+        :param star_k_mag: star K magnitude
+        :return: epm and its up and low uncertainties
+        """
+        depth_ppm = 10 ** 3 * depth
         ESM_bb_Tday = BlackBody(temperature=1.1 * teq * u.K)
         ESM_bb_Teff = BlackBody(temperature=star_teff * u.K)
+        ESM_bb_Tday_low = BlackBody(temperature=1.1 * (teq - teq_low_err) * u.K)
+        ESM_bb_Teff_low = BlackBody(temperature=(star_teff - star_teff_low_err) * u.K)
+        ESM_bb_Tday_up = BlackBody(temperature=1.1 * (teq + teq_up_err) * u.K)
+        ESM_bb_Teff_up = BlackBody(temperature=(star_teff + star_teff_up_err) * u.K)
         wavelength = 7.5 * u.micron
-        part1 = (ESM_bb_Tday(wavelength) / ESM_bb_Teff(wavelength)).value
-        part2 = depth * 10 ** (-star_k_mag / 5)
-        return 4.29 * part1 * part2
+        epm = 4.29 * (ESM_bb_Tday(wavelength) / ESM_bb_Teff(wavelength)).value * depth_ppm * 10 ** (-star_k_mag / 5)
+        epm_teff_low = 4.29 * (ESM_bb_Tday_low(wavelength) / ESM_bb_Teff_low(wavelength)).value * depth_ppm * 10 ** (
+                    -star_k_mag / 5)
+        epm_teff_up = 4.29 * (ESM_bb_Tday_up(wavelength) / ESM_bb_Teff_up(wavelength)).value * depth_ppm * 10 ** (
+                    -star_k_mag / 5)
+        return epm, epm - epm_teff_low + depth_low_err, epm_teff_up - epm + depth_up_err
 
-    def calculate_semi_amplitude(self, period: float, period_low_err: float, period_up_err: float, planet_mass: float, planet_mass_low_err: float, planet_mass_up_err: float,
-                                 star_mass: float, star_mass_low_err: float, star_mass_up_err: float, eccentricity: float = 0, inclination: float = np.pi/2):
+    def calculate_semi_amplitude(self, period: float, period_low_err: float, period_up_err: float, planet_mass: float,
+                                 planet_mass_low_err: float, planet_mass_up_err: float,
+                                 star_mass: float, star_mass_low_err: float, star_mass_up_err: float,
+                                 eccentricity: float = 0, inclination: float = np.pi / 2):
+        """
+        Calclates the estimated Radial Velocity semi amplitude in m/s
+        :param period: planet period in days
+        :param period_low_err: period lower uncertainty
+        :param period_up_err: period upper uncertainty
+        :param planet_mass: planet mass in earth masses
+        :param planet_mass_low_err: planet mass lower uncertainty
+        :param planet_mass_up_err: planet mass upper uncertainty
+        :param star_mass: star mass in solar masses
+        :param star_mass_low_err: star mass lower uncertainty
+        :param star_mass_up_err: star mass upper uncertainty
+        :param eccentricity: planet eccentricity in radians
+        :param inclination: planet inclination in radians
+        :return: the estimated semi amplitude in m/s and its lower and upper uncertainties
+        """
         planet_mass = LcbuilderHelper.convert_from_to(planet_mass, u.M_earth, u.kg)
         planet_mass_up_err = LcbuilderHelper.convert_from_to(planet_mass_up_err, u.M_earth, u.kg)
         planet_mass_low_err = LcbuilderHelper.convert_from_to(planet_mass_low_err, u.M_earth, u.kg)
@@ -165,17 +281,26 @@ class HabitabilityCalculator:
         period = LcbuilderHelper.convert_from_to(period, u.day, u.s)
         period_up_err = LcbuilderHelper.convert_from_to(period_up_err, u.day, u.s)
         period_low_err = LcbuilderHelper.convert_from_to(period_low_err, u.day, u.s)
-        constant = (2 * np.pi * HabitabilityCalculator.G) ** (1 / 3) * np.sin(inclination) * (1 / (np.sqrt(1 - eccentricity ** 2)))
+        constant = (2 * np.pi * HabitabilityCalculator.G) ** (1 / 3) * np.sin(inclination) * (
+                    1 / (np.sqrt(1 - eccentricity ** 2)))
         semi_amplitude = constant * (1 / period) ** (1 / 3) * planet_mass / ((star_mass + planet_mass) ** (2 / 3))
-        semi_amplitude_low_err = self._calculate_semi_amplitude_err(period, period_low_err, planet_mass, planet_mass_low_err, star_mass, star_mass_low_err, constant)
-        semi_amplitude_up_err = self._calculate_semi_amplitude_err(period, period_up_err, planet_mass, planet_mass_up_err, star_mass, star_mass_up_err, constant)
+        semi_amplitude_low_err = self._calculate_semi_amplitude_err(period, period_low_err, planet_mass,
+                                                                    planet_mass_low_err, star_mass, star_mass_low_err,
+                                                                    constant)
+        semi_amplitude_up_err = self._calculate_semi_amplitude_err(period, period_up_err, planet_mass,
+                                                                   planet_mass_up_err, star_mass, star_mass_up_err,
+                                                                   constant)
         return semi_amplitude, semi_amplitude_low_err, semi_amplitude_up_err
 
-    def _calculate_semi_amplitude_err(self, period: float, period_err: float, planet_mass: float, planet_mass_err: float, star_mass: float, star_mass_err: float, constant: float):
+    def _calculate_semi_amplitude_err(self, period: float, period_err: float, planet_mass: float,
+                                      planet_mass_err: float, star_mass: float, star_mass_err: float, constant: float):
         return constant * np.sqrt(
-            ((1 / period) ** (1 / 3) * ((star_mass + planet_mass) ** (2 / 3) + (star_mass + planet_mass) ** (-1 / 3) * (-2 / 3) * planet_mass) * (star_mass + planet_mass) ** (-4 / 3) * planet_mass_err) ** 2 +
-            (((1 / period) ** (-2 / 3) * (-1 / 3 / period ** 2 * planet_mass * (star_mass + planet_mass) ** (-2 / 3))) * period_err) ** 2 +
-            (((star_mass + planet_mass) ** (-5 / 3) * (-2) / 3 * (1 / period) ** (1 / 3) * planet_mass) * star_mass_err) ** 2
+            ((1 / period) ** (1 / 3) * ((star_mass + planet_mass) ** (2 / 3) + (star_mass + planet_mass) ** (-1 / 3) * (
+                        -2 / 3) * planet_mass) * (star_mass + planet_mass) ** (-4 / 3) * planet_mass_err) ** 2 +
+            (((1 / period) ** (-2 / 3) * (-1 / 3 / period ** 2 * planet_mass * (star_mass + planet_mass) ** (
+                        -2 / 3))) * period_err) ** 2 +
+            (((star_mass + planet_mass) ** (-5 / 3) * (-2) / 3 * (1 / period) ** (
+                        1 / 3) * planet_mass) * star_mass_err) ** 2
         )
 
     def calculate_hz_score(self, t_eff, star_mass, luminosity, period):
@@ -189,8 +314,8 @@ class HabitabilityCalculator:
         @return: a tuple of semi-major axis and hz position string.
         """
         hz = self.calculate_hz(t_eff, luminosity) if t_eff is not None and not np.isnan(t_eff) else None
-        a1_au = self.calculate_semi_major_axis(period, star_mass) if star_mass is not None and not np.isnan(star_mass)\
-                else np.nan
+        a1_au = self.calculate_semi_major_axis(period, star_mass) if star_mass is not None and not np.isnan(star_mass) \
+            else np.nan
         if np.isnan(a1_au) or hz is None:
             hz_position = "-"
         elif a1_au < hz[0]:

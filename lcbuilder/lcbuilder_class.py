@@ -71,13 +71,17 @@ class LcBuilder:
             flux_float = flux_float[initial_trim_args]
             flux_err_float = flux_err_float[initial_trim_args]
         lc = lightkurve.LightCurve(time=time_float, flux=flux_float, flux_err=flux_err_float)
-        lc_df = pandas.DataFrame(columns=['#time', 'flux', 'flux_err'])
+        lc_df = pandas.DataFrame(columns=['#time', 'flux', 'flux_err', 'sector'])
         time_float = numpy.array(time_float)
         flux_float = numpy.array(flux_float)
         flux_err_float = numpy.array(flux_err_float)
         lc_df['#time'] = time_float
         lc_df['flux'] = flux_float
         lc_df['flux_err'] = flux_err_float
+        if lc_build.sectors_to_start_end_times is not None and len(lc_build.sectors_to_start_end_times.keys()) > 0:
+            for key in lc_build.sectors_to_start_end_times.keys():
+                lc_df.loc[(lc_df['#time'] >= lc_build.sectors_to_start_end_times[key][0]) &
+                          (lc_df['#time'] <= lc_build.sectors_to_start_end_times[key][1]), 'sector'] = key
         lc_df.to_csv(object_dir + "lc.csv", index=False)
         lc = lc.remove_outliers(sigma_lower=float('inf') if object_info.lower_outliers_sigma is None else object_info.lower_outliers_sigma,
                                 sigma_upper=object_info.outliers_sigma)
