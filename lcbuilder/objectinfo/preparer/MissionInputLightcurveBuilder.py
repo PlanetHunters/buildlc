@@ -26,9 +26,9 @@ class MissionInputLightcurveBuilder(LightcurveBuilder):
             star_info.assume_model_mass()
             star_info.assume_model_radius()
         logging.info("Loading lightcurve from file " + object_info.input_file + ".")
-        df = pd.read_csv(object_info.input_file, float_precision='round_trip', sep=',',
-                         usecols=['#time', 'flux', 'flux_err'])
+        df = pd.read_csv(object_info.input_file, float_precision='round_trip', sep=',')
         lc = lk.LightCurve(time=df['#time'], flux=df['flux'], flux_err=df['flux_err'])
+        lc_data = self.extract_lc_data_from_df(df)
         transits_min_count = 1
         lc = lc.remove_nans()
-        return LcBuild(lc, None, star_info, transits_min_count, None, None, None, None, None)
+        return LcBuild(lc, lc_data, star_info, transits_min_count, None, None, None, None, None)
