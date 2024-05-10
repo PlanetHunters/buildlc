@@ -108,8 +108,13 @@ class LightcurveBuilder(ABC):
                 flux.append(fit_file[1].data['PDCSAP_FLUX'])
                 flux_err.append(fit_file[1].data['PDCSAP_FLUX_ERR'])
             except:
-                flux.append(fit_file[1].data['KSPSAP_FLUX'])
-                flux_err.append(fit_file[1].data['KSPSAP_FLUX_ERR'])
+                # QLP curves that can contain KSPSAP_FLUX or DET_FLUX: https://tess.mit.edu/qlp/
+                try:
+                    flux.append(fit_file[1].data['KSPSAP_FLUX'])
+                    flux_err.append(fit_file[1].data['KSPSAP_FLUX_ERR'])
+                except:
+                    flux.append(fit_file[1].data['DET_FLUX'])
+                    flux_err.append(fit_file[1].data['DET_FLUX_ERR'])
             background_flux.append(fit_file[1].data['SAP_BKG'])
             try:
                 quality.append(fit_file[1].data['QUALITY'])
