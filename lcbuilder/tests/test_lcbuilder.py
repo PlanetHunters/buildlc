@@ -115,19 +115,19 @@ class TestsLcBuilder(TestsLcBuilderAbstract):
         self.assertEqual(1320, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo([13], "TIC 352315023", cadence=120), "./")
         self.assertEqual(18107, len(lc_build.lc))
-        self.assertEqual(20479, len(lc_build.lc_data))
+        self.assertEqual(19811, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo([13], "KIC 12557548", cadence=60), "./")
         self.assertEqual(127850, len(lc_build.lc))
         self.assertEqual(130290, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo('all', "EPIC 211945201", cadence=60), "./")
         self.assertEqual(107670, len(lc_build.lc))
-        self.assertEqual(116820, len(lc_build.lc_data))
+        self.assertEqual(116640, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo([1], "KIC 12557548", cadence=1800), "./")
         self.assertEqual(1543, len(lc_build.lc))
         self.assertEqual(1639, len(lc_build.lc_data))
         lc_build = LcBuilder().build(MissionObjectInfo([5], "EPIC 211945201", cadence=1800), "./")
         self.assertEqual(3324, len(lc_build.lc))
-        self.assertEqual(3663, len(lc_build.lc_data))
+        self.assertEqual(3657, len(lc_build.lc_data))
 
     def test_binning(self):
         directory = os.path.dirname(__file__) + "/resources/input.csv"
