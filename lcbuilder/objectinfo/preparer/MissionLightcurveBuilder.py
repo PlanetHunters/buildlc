@@ -200,7 +200,10 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                     sectors_to_start_end_times[sector] = (tpf.time[0].value, tpf.time[-1].value)
                     apertures[sector] = ApertureExtractor.from_boolean_mask(tpf.pipeline_mask, tpf.column, tpf.row)
                     try:
-                        logging.info("Sector %s dates: Start (%s) End(%s)", sector, tpf.meta['DATE-OBS'], tpf.meta['DATE-END'])
+                        if 'DATE-OBS' in tpf.meta:
+                            logging.info("Sector %s dates: Start (%s) End(%s)", sector, tpf.meta['DATE-OBS'], tpf.meta['DATE-END'])
+                        elif 'DATE' in tpf.meta:
+                            logging.info("Sector %s date (%s)", sector, tpf.meta['DATE'])
                     except:
                         logging.exception("Problem extracting sector dates from TPF")
                 for i in range(0, len(lcf)):
@@ -208,7 +211,6 @@ class MissionLightcurveBuilder(LightcurveBuilder):
                         if lc is None:
                             lc = lcf.data[i].normalize()
                         else:
-                            # Lightkurve removes the custom sectors field when calling append
                             lc = lc.append(lcf.data[i].normalize())
                     else:
                         matching_objects.append(lcf.data[i].label)

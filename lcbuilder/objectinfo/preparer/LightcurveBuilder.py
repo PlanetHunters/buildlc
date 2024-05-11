@@ -154,6 +154,8 @@ class LightcurveBuilder(ABC):
             lc_data['motion_x'] = motion_x
             lc_data['motion_y'] = motion_y
         lc_data.dropna(subset=['time'], inplace=True)
+        for fit_file in fit_files:
+            fit_file.close()
         return lc_data
 
     def extract_lc_data_from_df(self, lc_df: pd.DataFrame):
@@ -189,8 +191,10 @@ class LightcurveBuilder(ABC):
         lc_data['time'] = time
         lc_data['flux'] = flux
         lc_data['flux_err'] = flux_err
-        lc_data['background_flux'] = background_flux
-        lc_data['quality'] = quality
+        if len(background_flux) > 0:
+            lc_data['background_flux'] = background_flux
+        if len(quality) > 0:
+            lc_data['quality'] = quality
         if len(centroids_x) > 0:
             lc_data['centroids_x'] = centroids_x
             lc_data['centroids_y'] = centroids_y
