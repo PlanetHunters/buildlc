@@ -703,9 +703,9 @@ class LcBuilder:
         elif mission == constants.MISSION_K2:
             author = constants.K2_AUTHOR
         elif mission == constants.MISSION_TESS and ((cadence == 'short' or cadence == 'fast') or cadence < 600):
-            author = constants.TESS_SPOC_AUTHOR
-        elif mission == constants.MISSION_TESS and (cadence == 'long' or cadence >= 600):
             author = constants.SPOC_AUTHOR
+        elif mission == constants.MISSION_TESS and (cadence == 'long' or cadence >= 600):
+            author = constants.TESS_SPOC_AUTHOR
         return author
 
     def parse_coords(self, target: str):
