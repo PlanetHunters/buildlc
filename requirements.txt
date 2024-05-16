@@ -19,7 +19,7 @@ fbpca==1.0
 filelock==3.14.0
 foldedleastsquares==1.1.3
 fonttools==4.51.0
-fsspec==2024.3.1
+fsspec==2024.5.0
 future==1.0.0
 george==0.4.1
 html5lib==1.1
@@ -32,13 +32,13 @@ jeepney==0.8.0
 Jinja2==3.1.4
 joblib==1.4.2
 k2plr==0.2.9
-keyring==25.2.0
+keyring==25.2.1
 kiwisolver==1.4.5
-lcbuilder==0.18.1
+lcbuilder==0.18.2
 lightkurve==2.4.2
 llvmlite==0.41.1
 MarkupSafe==2.1.5
-matplotlib==3.8.4
+matplotlib==3.9.0
 memoization==0.4.0
 more-itertools==10.2.0
 mpmath==1.3.0
@@ -97,4 +97,4 @@ webencodings==0.5.1
 wheel==0.43.0
 wotan==1.9
 xyzservices==2024.4.0
-zipp==3.18.1
+zipp==3.18.2
