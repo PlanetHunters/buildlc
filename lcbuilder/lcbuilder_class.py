@@ -143,6 +143,35 @@ class LcBuilder:
                                                              object_info.oscillation_min_period,
                                                              object_info.oscillation_max_period,
                                                              cpus=cpus, search_engine=object_info.search_engine)
+            # import matplotlib.pyplot as plt
+            # import numpy as np
+            # import pandas as pd
+            #
+            # signals_df = pd.read_csv("TIC169285097_[2]_explore/sa/signals.csv")
+            # model_time = np.linspace(clean_time[0], clean_time[-1], 100000)
+            # model_flux = np.ones(len(model_time))
+            # model_flux_3 = np.ones(len(model_time))
+            # limit = 3
+            # run = 0
+            # for index, row in signals_df.iterrows():
+            #     model_flux = model_flux + row['amplitude'] * np.sin(
+            #         row['phase'] + model_time / (1 / row['period_s'] / 3600 / 24) * 2 * np.pi)
+            #     run = run + 1
+            #     if run <= limit:
+            #         model_flux_3 = model_flux_3 + row['amplitude'] * np.sin(
+            #             row['phase'] + model_time / (1 / row['period_s'] / 3600 / 24) * 2 * np.pi)
+            # indexes = np.argwhere((clean_time > 1000) & (clean_time < 1500)).flatten()
+            # fig, axs = plt.subplots(1, 1, figsize=(16, 6), constrained_layout=True)
+            # axs.scatter(clean_time[indexes], old_flux[indexes], color="orange")
+            # axs.scatter(clean_time[indexes], flatten_flux[indexes], color="firebrick")
+            # axs.plot(model_time, model_flux_3, color="cyan")
+            # axs.plot(model_time, model_flux, color="gray", alpha=0.8)
+            # axs.set_xlabel("Time (TBJD)", fontsize=15)
+            # axs.set_ylabel("Flux norm.", fontsize=15)
+            # axs.tick_params(axis='both', which='major', labelsize=15)
+            # axs.tick_params(axis='both', which='minor', labelsize=15)
+            # plt.show()
+            # plt.clf()
         if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
@@ -343,16 +372,20 @@ class LcBuilder:
         fig, axs = plt.subplots(1, 1, figsize=(8, 4), constrained_layout=True)
         axs.set_ylabel("Flux norm.")
         axs.set_xlabel("Time (d)")
-        title = "stellar activity P=" + str(round(period, 6)) + "d"
+        title = "stellar activity P=" + str(float(f'{period:.2g}')) + "d"
         if object_id is not None:
             title = f'{object_id} {title}'
-        axs.set_title(title)
+        axs.set_title(title, fontsize=25)
+        axs.set_xlabel("Time folded", fontsize=25)
+        axs.set_ylabel("Flux norm.", fontsize=25)
+        axs.tick_params(axis='both', which='major', labelsize=25)
+        axs.tick_params(axis='both', which='minor', labelsize=25)
         axs.scatter(folded_time, flux, 2, color="blue", alpha=0.3)
         axs.scatter(folded_time, fit_flux, 2, color="orange", alpha=1)
         signal_dir = sa_dir + "/" + str(number)
         if not os.path.exists(signal_dir):
             os.mkdir(signal_dir)
-        plt.savefig(signal_dir + "/folded_curve.png")
+        plt.savefig(signal_dir + "/folded_curve.png", bbox_inches='tight')
         plt.clf()
         plt.close()
 
