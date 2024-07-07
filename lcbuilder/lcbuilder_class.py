@@ -101,6 +101,8 @@ class LcBuilder:
                                               object_dir + "/Periodogram_Initial_" + str(sherlock_id) + ".png")
         self.__plot_autocorrelation(lc, lc_build.cadence, sherlock_id,
                                     object_dir + "/Autocorrelation_Initial_" + str(sherlock_id) + ".png")
+        original_time = clean_time
+        original_flux = flatten_flux
         if object_info.auto_detrend_period is not None:
             lc_build.detrend_period = object_info.auto_detrend_period
         elif object_info.auto_detrend_enabled:
@@ -143,35 +145,6 @@ class LcBuilder:
                                                              object_info.oscillation_min_period,
                                                              object_info.oscillation_max_period,
                                                              cpus=cpus, search_engine=object_info.search_engine)
-            # import matplotlib.pyplot as plt
-            # import numpy as np
-            # import pandas as pd
-            #
-            # signals_df = pd.read_csv("TIC169285097_[2]_explore/sa/signals.csv")
-            # model_time = np.linspace(clean_time[0], clean_time[-1], 100000)
-            # model_flux = np.ones(len(model_time))
-            # model_flux_3 = np.ones(len(model_time))
-            # limit = 3
-            # run = 0
-            # for index, row in signals_df.iterrows():
-            #     model_flux = model_flux + row['amplitude'] * np.sin(
-            #         row['phase'] + model_time / (1 / row['period_s'] / 3600 / 24) * 2 * np.pi)
-            #     run = run + 1
-            #     if run <= limit:
-            #         model_flux_3 = model_flux_3 + row['amplitude'] * np.sin(
-            #             row['phase'] + model_time / (1 / row['period_s'] / 3600 / 24) * 2 * np.pi)
-            # indexes = np.argwhere((clean_time > 1000) & (clean_time < 1500)).flatten()
-            # fig, axs = plt.subplots(1, 1, figsize=(16, 6), constrained_layout=True)
-            # axs.scatter(clean_time[indexes], old_flux[indexes], color="orange")
-            # axs.scatter(clean_time[indexes], flatten_flux[indexes], color="firebrick")
-            # axs.plot(model_time, model_flux_3, color="cyan")
-            # axs.plot(model_time, model_flux, color="gray", alpha=0.8)
-            # axs.set_xlabel("Time (TBJD)", fontsize=15)
-            # axs.set_ylabel("Flux norm.", fontsize=15)
-            # axs.tick_params(axis='both', which='major', labelsize=15)
-            # axs.tick_params(axis='both', which='minor', labelsize=15)
-            # plt.show()
-            # plt.clf()
         if lc_build.detrend_period is not None:
             logging.info('================================================')
             logging.info('AUTO-DETREND EXECUTION')
@@ -190,7 +163,20 @@ class LcBuilder:
                                 object_dir + "/Periodogram_Final_" + str(sherlock_id) + ".png")
         self.__plot_autocorrelation(lc, lc_build.cadence, sherlock_id,
                                     object_dir + "/Autocorrelation_Final_" + str(sherlock_id) + ".png")
+        self.__plot_flux_diff(original_time, original_flux, lc_build.lc.time.value, lc_build.lc.flux.value,
+                                    object_dir + "/Flux_diff_" + str(sherlock_id) + ".png")
         return lc_build
+
+    def __plot_flux_diff(self, original_time, original_flux, time, flux, filename):
+        fig, axs = plt.subplots(1, 1, figsize=(16, 6), constrained_layout=True)
+        axs.scatter(original_time, original_flux, color="orange")
+        axs.scatter(time, flux, color="firebrick")
+        axs.set_xlabel("Time (TBJD)", fontsize=15)
+        axs.set_ylabel("Flux norm.", fontsize=15)
+        axs.tick_params(axis='both', which='major', labelsize=15)
+        axs.tick_params(axis='both', which='minor', labelsize=15)
+        plt.savefig(filename, bbox_inches='tight')
+        plt.clf()
 
     def __plot_autocorrelation(self, lc, cadence_s, object_id, filename, max_days=5):
         nlags = int(max_days / (cadence_s / 60 / 60 / 24))
@@ -201,7 +187,7 @@ class LcBuilder:
         axs.set_xlabel("Time lags (d)")
         axs.set_title(object_id + " Autocorrelation")
         axs.plot(lags, correlation, color="blue")
-        plt.savefig(filename)
+        plt.savefig(filename, bbox_inches='tight')
         plt.clf()
         plt.close()
 
