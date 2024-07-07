@@ -34,7 +34,7 @@ joblib==1.4.2
 k2plr==0.2.9
 keyring==25.2.1
 kiwisolver==1.4.5
-lcbuilder==0.18.3
+lcbuilder==0.18.4
 lightkurve==2.4.2
 llvmlite==0.41.1
 MarkupSafe==2.1.5
@@ -63,7 +63,7 @@ pandas==1.5.3
 patsy==0.5.6
 photutils==1.10.0
 pillow==10.4.0
-pip==24.1.1
+pip==24.1.2
 pybind11==2.11.1
 pycparser==2.22
 pyerfa==2.0.1.4
