@@ -171,10 +171,10 @@ class LcBuilder:
         fig, axs = plt.subplots(1, 1, figsize=(16, 6), constrained_layout=True)
         axs.scatter(original_time, original_flux, color="orange")
         axs.scatter(time, flux, color="firebrick")
-        axs.set_xlabel("Time (TBJD)", fontsize=15)
-        axs.set_ylabel("Flux norm.", fontsize=15)
-        axs.tick_params(axis='both', which='major', labelsize=15)
-        axs.tick_params(axis='both', which='minor', labelsize=15)
+        axs.set_xlabel("Time (TBJD)", fontsize=35)
+        axs.set_ylabel("Flux norm.", fontsize=35)
+        axs.tick_params(axis='both', which='major', labelsize=35)
+        axs.tick_params(axis='both', which='minor', labelsize=35)
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()
 
@@ -185,7 +185,6 @@ class LcBuilder:
         fig, axs = plt.subplots(1, 1, figsize=(8, 4), constrained_layout=True)
         axs.set_ylabel("Autocorrelation")
         axs.set_xlabel("Time lags (d)")
-        axs.set_title(object_id + " Autocorrelation")
         axs.plot(lags, correlation, color="blue")
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()
@@ -196,7 +195,6 @@ class LcBuilder:
                                         oversample_factor=oversample)
         # power_norm = self.running_median(periodogram.power.value, 20)
         periodogram.plot(view='period', scale='log')
-        plt.title(str(object_id) + " Lightcurve periodogram")
         plt.savefig(filename, bbox_inches='tight')
         plt.clf()
         plt.close()
@@ -361,8 +359,7 @@ class LcBuilder:
         title = "stellar activity P=" + str(float(f'{period:.2g}')) + "d"
         if object_id is not None:
             title = f'{object_id} {title}'
-        axs.set_title(title, fontsize=25)
-        axs.set_xlabel("Time folded", fontsize=25)
+        axs.set_xlabel("Phase", fontsize=25)
         axs.set_ylabel("Flux norm.", fontsize=25)
         axs.tick_params(axis='both', which='major', labelsize=25)
         axs.tick_params(axis='both', which='minor', labelsize=25)
