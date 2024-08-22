@@ -3,6 +3,7 @@ from math import floor, ceil
 import foldedleastsquares
 import logging
 import numpy as np
+import wotan
 from foldedleastsquares import DefaultTransitTemplateGenerator
 from lcbuilder import constants
 from scipy import stats
@@ -174,7 +175,7 @@ class LcbuilderHelper:
             detrend_window_size = window_size if window_size > cadence else cadence
         else:
             detrend_window_size = window_size
-        flatten_lc, trend = wotan.flatten(flatten_input.time, flatten_input.flux, window_length=detrend_window_size,
+        flatten_lc, trend = wotan.flatten(time, flux, window_length=detrend_window_size,
                                           return_trend=True, method="biweight")
         return flatten_lc, trend
 
