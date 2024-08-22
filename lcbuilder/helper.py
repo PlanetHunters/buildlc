@@ -176,7 +176,7 @@ class LcbuilderHelper:
         else:
             detrend_window_size = window_size
         flatten_lc, trend = wotan.flatten(time, flux, window_length=detrend_window_size,
-                                          return_trend=True, method="biweight")
+                                          return_trend=True, method=method)
         return flatten_lc, trend
 
     @staticmethod
