@@ -172,11 +172,15 @@ class LcbuilderHelper:
     def detrend(time, flux, window_size, check_cadence=False, method='biweight'):
         if check_cadence:
             cadence = LcbuilderHelper.compute_cadence(time) / 24 / 3600
-            detrend_window_size = window_size if window_size > cadence * 2 else cadence * 2
+            if window_size > cadence * 3:
+                flatten_lc, trend = wotan.flatten(time, flux, window_length=window_size, return_trend=True,
+                                                  method=method)
+            else:
+                flatten_lc = flux
+                trend = None
         else:
-            detrend_window_size = window_size
-        flatten_lc, trend = wotan.flatten(time, flux, window_length=detrend_window_size, return_trend=True,
-                                          method=method)
+            flatten_lc, trend = wotan.flatten(time, flux, window_length=window_size, return_trend=True,
+                                                  method=method)
         return flatten_lc, trend
 
     @staticmethod
@@ -215,3 +219,4 @@ class LcbuilderHelper:
         elif mission == constants.MISSION_K2:
             px_size_arcs = 4
         return px_size_arcs
+
