@@ -166,6 +166,17 @@ class LcbuilderHelper:
     def estimate_transit_cadences(cadence_s, duration_d):
         cadence = cadence_s / 3600 / 24
         return duration_d // cadence
+    
+    @staticmethod
+    def detrend(time, flux, window_size, check_cadence=False, method='biweight'):
+        if check_cadence:
+            cadence = LcbuilderHelper.compute_cadence(time)
+            detrend_window_size = window_size if window_size > cadence else cadence
+        else:
+            detrend_window_size = window_size
+        flatten_lc, trend = wotan.flatten(flatten_input.time, flatten_input.flux, window_length=detrend_window_size,
+                                          return_trend=True, method="biweight")
+        return flatten_lc, trend
 
     @staticmethod
     def mission_lightkurve_sector_extraction(mission: str, lightkurve_item: object) -> np.ndarray:
