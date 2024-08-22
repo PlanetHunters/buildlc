@@ -176,7 +176,8 @@ class LcbuilderHelper:
                 flatten_lc, trend = wotan.flatten(time, flux, window_length=window_size, return_trend=True,
                                                   method=method)
             else:
-                flatten_lc = flux
+                flatten_lc, trend = wotan.flatten(time, flux, window_length=cadence * 4, return_trend=True,
+                                                  method=method)
                 trend = None
         else:
             flatten_lc, trend = wotan.flatten(time, flux, window_length=window_size, return_trend=True,
