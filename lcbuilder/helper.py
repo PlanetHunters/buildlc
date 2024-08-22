@@ -175,8 +175,8 @@ class LcbuilderHelper:
             detrend_window_size = window_size if window_size > cadence else cadence
         else:
             detrend_window_size = window_size
-        flatten_lc, trend = wotan.flatten(time, flux, window_length=detrend_window_size,
-                                          return_trend=True, method=method)
+        flatten_lc, trend = wotan.flatten(time, flux, window_length=detrend_window_size, return_trend=True,
+                                          method=method)
         return flatten_lc, trend
 
     @staticmethod
