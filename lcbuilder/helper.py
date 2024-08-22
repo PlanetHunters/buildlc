@@ -171,7 +171,7 @@ class LcbuilderHelper:
     @staticmethod
     def detrend(time, flux, window_size, check_cadence=False, method='biweight'):
         if check_cadence:
-            cadence = LcbuilderHelper.compute_cadence(time)
+            cadence = LcbuilderHelper.compute_cadence(time) * 24 * 3600
             detrend_window_size = window_size if window_size > cadence else cadence
         else:
             detrend_window_size = window_size
