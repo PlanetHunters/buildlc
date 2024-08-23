@@ -1,6 +1,6 @@
 astropy==5.3.4
 astroquery==0.4.7
-autograd==1.6.2
+autograd==1.7.0
 backports.tarfile==1.2.0
 batman-package==2.4.9
 beautifulsoup4==4.12.3
@@ -20,7 +20,6 @@ filelock==3.15.4
 foldedleastsquares==1.1.5
 fonttools==4.53.1
 fsspec==2024.6.1
-future==1.0.0
 george==0.4.3
 html5lib==1.1
 idna==3.7
@@ -34,7 +33,7 @@ joblib==1.4.2
 k2plr==0.2.9
 keyring==25.3.0
 kiwisolver==1.4.5
-lcbuilder==0.20.4
+lcbuilder==0.20.5
 lightkurve==2.4.2
 llvmlite==0.41.1
 MarkupSafe==2.1.5
