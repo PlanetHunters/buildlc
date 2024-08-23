@@ -170,6 +170,8 @@ class LcbuilderHelper:
     
     @staticmethod
     def detrend(time, flux, window_size, check_cadence=False, method='biweight'):
+        if np.all(flux < 0):
+            flux = flux - np.min(flux)
         if check_cadence:
             cadence = LcbuilderHelper.compute_cadence(time) / 24 / 3600
             if window_size > cadence * 3:
