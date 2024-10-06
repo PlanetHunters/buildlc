@@ -97,7 +97,7 @@ class TestsLcBuilder(TestsLcBuilderAbstract):
 
     def test_input_with_id(self):
         directory = self._get_test_resource_file("input.csv")
-        lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory), "./")
+        lc_build = LcBuilder().build(MissionInputObjectInfo("TIC 352315023", directory, initial_transit_mask=[{'P': 3, 'D': 60, 'T0': 50}]), "./")
         self.assertGreater(len(lc_build.lc), 0)
         self._test_tess_star_params(lc_build.star_info)
 

@@ -98,9 +98,9 @@ class LcBuilder:
         flatten_flux = lc.flux.value
         clean_flux_err = lc.flux_err.value
         periodogram = self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id,
-                                              object_dir + "/Periodogram_Initial_" + str(sherlock_id) + ".png")
+                                              object_dir + "/periodicity/Periodogram_Initial_" + str(sherlock_id) + ".png")
         self.__plot_autocorrelation(lc, lc_build.cadence, sherlock_id,
-                                    object_dir + "/Autocorrelation_Initial_" + str(sherlock_id) + ".png")
+                                    object_dir + "/periodicity/Autocorrelation_Initial_" + str(sherlock_id) + ".png")
         original_time = clean_time
         original_flux = flatten_flux
         if object_info.auto_detrend_period is not None:
@@ -160,25 +160,41 @@ class LcBuilder:
         lc = lightkurve.LightCurve(time=clean_time, flux=flatten_flux, flux_err=clean_flux_err)
         lc_build.lc = lc
         self.__plot_periodogram(lc, 0.05, 15, 10, sherlock_id,
-                                object_dir + "/Periodogram_Final_" + str(sherlock_id) + ".png")
+                                object_dir + "/periodicity/Periodogram_Final_" + str(sherlock_id) + ".png")
         self.__plot_autocorrelation(lc, lc_build.cadence, sherlock_id,
-                                    object_dir + "/Autocorrelation_Final_" + str(sherlock_id) + ".png")
-        self.__plot_flux_diff(original_time, original_flux, lc_build.lc.time.value, lc_build.lc.flux.value,
-                                    object_dir + "/Flux_diff_" + str(sherlock_id) + ".png")
+                                    object_dir + "/periodicity/Autocorrelation_Final_" + str(sherlock_id) + ".png")
+        self.__plot_flux_diff(sherlock_id, object_dir, original_time, original_flux, lc_build.lc.time.value, lc_build.lc.flux.value)
         return lc_build
 
-    def __plot_flux_diff(self, original_time, original_flux, time, flux, filename):
-        fig, axs = plt.subplots(1, 1, figsize=(16, 6), constrained_layout=True)
-        axs.scatter(original_time, original_flux, color="orange")
-        axs.scatter(time, flux, color="firebrick")
-        axs.set_xlabel("Time (TBJD)", fontsize=35)
-        axs.set_ylabel("Flux norm.", fontsize=35)
-        axs.tick_params(axis='both', which='major', labelsize=35)
-        axs.tick_params(axis='both', which='minor', labelsize=35)
-        plt.savefig(filename, bbox_inches='tight')
-        plt.clf()
+    def __plot_flux_diff(self, object_id, object_dir, original_time, original_flux, time, flux):
+        # Plot tokenized curve detrends
+        dir = object_dir + '/flux_diff/'
+        dif = original_time[1:] - original_time[:-1]
+        jumps = numpy.where(dif > 3)[0]
+        jumps = numpy.append(jumps, len(original_time))
+        previous_jump_index = 0
+        for jumpIndex in jumps:
+            original_time_partial = original_time[previous_jump_index:jumpIndex]
+            original_flux_partial = original_flux[previous_jump_index:jumpIndex]
+            time_partial = time[(time > original_time_partial[0]) & (time <= original_time_partial[-1])]
+            flux_partial = flux[(time > original_time_partial[0]) & (time <= original_time_partial[-1])]
+            if len(flux_partial) != len(original_flux_partial) or numpy.any(flux_partial[1:-1] != original_flux_partial[1:-1]):
+                if not os.path.exists(dir):
+                    os.mkdir(dir)
+                fig, axs = plt.subplots(1, 1, figsize=(16, 6), constrained_layout=True)
+                axs.scatter(original_time_partial[1:-1], original_flux_partial[1:-1], color="firebrick")
+                axs.scatter(time_partial[1:-1], flux_partial[1:-1], color="orange", alpha=0.5)
+                axs.set_xlabel("Time (TBJD)", fontsize=35)
+                axs.set_ylabel("Flux norm.", fontsize=35)
+                axs.tick_params(axis='both', which='major', labelsize=35)
+                axs.tick_params(axis='both', which='minor', labelsize=35)
+                plt.savefig(dir + str(object_id) + '_time_' + str(time_partial[1]) + '_' + str(time_partial[-1]) + '.png', bbox_inches='tight')
+                plt.clf()
+            previous_jump_index = jumpIndex
 
     def __plot_autocorrelation(self, lc, cadence_s, object_id, filename, max_days=5):
+        if not os.path.exists(os.path.dirname(filename)):
+           os.mkdir(os.path.dirname(filename))
         nlags = int(max_days / (cadence_s / 60 / 60 / 24))
         correlation = acf(lc.flux.value, nlags=nlags, fft=False)
         lags = numpy.linspace(0, max_days, len(correlation))
@@ -191,6 +207,8 @@ class LcBuilder:
         plt.close()
 
     def __plot_periodogram(self, lc, min_period, max_period, oversample, object_id, filename):
+        if not os.path.exists(os.path.dirname(filename)):
+           os.mkdir(os.path.dirname(filename))
         periodogram = lc.to_periodogram(minimum_period=min_period, maximum_period=max_period,
                                         oversample_factor=oversample)
         # power_norm = self.running_median(periodogram.power.value, 20)
