@@ -34,6 +34,7 @@ setuptools.setup(
                         "tess-point==0.6.1",
                         "foldedleastsquares==1.1.6",
                         'typing_extensions==4.7.1', #For astropy version
+                        'ncertainties==3.2.2',
                         'urllib3==2.2.3',
                         "wotan==1.9",
     ]
