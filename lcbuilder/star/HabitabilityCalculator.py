@@ -167,7 +167,7 @@ class HabitabilityCalculator:
                       t_eq, t_eq_low_err, t_eq_up_err, star_radius, star_radius_low_err, star_radius_up_err,
                       star_j_mag):
         """
-        Calculates the Transmission Spectroscopy Metric (TSM).
+        Calculates the Transmission Spectroscopy Metric (TSM). From https://exofop.ipac.caltech.edu/tess/tsm.php
         :param planet_radius: planet radius in earth radii
         :param planet_radius_low_err: planet radius lower uncertainty
         :param planet_radius_up_err: planet radius upper uncertainty
@@ -193,8 +193,8 @@ class HabitabilityCalculator:
     def calculate_ESM(self, depth, depth_low_err, depth_up_err, teq, teq_low_err, teq_up_err, star_teff,
                       star_teff_low_err, star_teff_up_err, star_k_mag):
         """
-        Calculates Emission Spectroscopy Metric (ESM). The uuncertainty is computed from the depth error and the black body difference between the value
-        obtained for the teff and teq and their uncertainties.
+        Calculates Emission Spectroscopy Metric (ESM). The uncertainty is computed from the depth error and the black body difference between the value
+        obtained for the teff and teq and their uncertainties. From https://exofop.ipac.caltech.edu/tess/tsm.php
         :param depth: the depth in ppts
         :param depth_low_err: depth lower uncertainty
         :param depth_up_err: depth upper uncertainty
