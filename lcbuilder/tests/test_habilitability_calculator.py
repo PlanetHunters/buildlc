@@ -41,6 +41,41 @@ class TestsHarmonics(TestsLcBuilderAbstract):
         self.assertAlmostEqual(teq_albedo_0[0], 761.1899, 3)
         self.assertAlmostEqual(teq_albedo_0[1], 42.0955, 3)
 
+    def test_calculate_teff(self):
+        teff = self.habitability_calculator.calculate_teff(6000, 100, 100,
+                                                    0.01, 0.001, 0.001,
+                                                    0.05, 0.001, 0.001)
+        self.assertAlmostEqual(teff[0], 4012.4418, 3)
+
+    def test_calculate_temperature_stat(self):
+        teff = self.habitability_calculator.calculate_teff(6000, 100, 100,
+                                                    0.01, 0.001, 0.001,
+                                                    0.05, 0.001, 0.001)
+        teq_default_albedo = (
+            self.habitability_calculator.calculate_teq(1, 0.1, 0.1, 1,
+                                                       0.1, 0.1, 20, 0.1,
+                                                       0.1, 6000, 100, 100,
+                                                       albedo=0.3)
+        )
+        stat = (
+            self.habitability_calculator.calculate_planet_temperature_stat(teq_default_albedo[0], teq_default_albedo[1],
+                                                                       teq_default_albedo[2], teff[0], teff[1], teff[2])
+        )
+        self.assertAlmostEqual(stat, 15.8389, 3)
+
+    def test_calculate_albedo(self):
+        albedo = self.habitability_calculator.calculate_albedo(0.01, 0.001, 0.001,
+                                                               20, 0.1, 0.1, 1, 0.1, 0.1,
+                                                               10, 0.1, 0.1)
+        self.assertAlmostEqual(albedo[0], 0.096, 2)
+
+    def test_calculate_albedo_stat(self):
+        albedo = self.habitability_calculator.calculate_albedo(0.01, 0.001, 0.001,
+                         20, 0.1, 0.1, 1, 0.1, 0.1,
+                         10, 0.1, 0.1)
+        stat = self.habitability_calculator.calculate_albedo_stat(albedo[0], albedo[1], albedo[2])
+        self.assertAlmostEqual(stat, 76.72, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

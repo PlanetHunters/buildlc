@@ -138,9 +138,10 @@ class HabitabilityCalculator:
 
     def calculate_teq(self, star_mass, star_mass_low_err, star_mass_up_err, star_radius, star_radius_low_err,
                       star_radius_up_err,
-                      period, period_low_err, period_up_err, star_teff, star_teff_low_err, star_teff_up_err, albedo=0.3):
+                      period, period_low_err, period_up_err, star_teff, star_teff_low_err, star_teff_up_err,
+                      albedo=0.3):
         a, a_low_err, a_up_err = self.calculate_semi_major_axis(period, period_low_err, period_up_err,
-                                                                         star_mass, star_mass_low_err, star_mass_up_err)
+                                                                star_mass, star_mass_low_err, star_mass_up_err)
         a_rsun = LcbuilderHelper.convert_from_to(a, u.au, u.R_sun)
         a_low_err_rsun = LcbuilderHelper.convert_from_to(a_low_err, u.au, u.R_sun)
         a_up_err_rsun = LcbuilderHelper.convert_from_to(a_up_err, u.au, u.R_sun)
@@ -151,6 +152,42 @@ class HabitabilityCalculator:
                   ((ufloat(star_radius, star_radius_up_err) / (2 * ufloat(a_rsun, a_up_err_rsun))) ** 0.5) *
                   (1 - albedo) ** (1 / 4))
         return teq_low.n, teq_low.s, teq_up.s
+
+    def calculate_teff(self, star_teff, star_teff_low_err,
+                       star_teff_up_err, secondary_depth, secondary_depth_low_err, secondary_depth_up_err,
+                       depth, depth_low_err, depth_up_err):
+        teff_low = (ufloat(star_teff, star_teff_low_err) *
+                    (ufloat(secondary_depth, secondary_depth_low_err) ** (1 / 4)) /
+                    (ufloat(depth, depth_low_err) ** (1 / 4)))
+        teff_up = (ufloat(star_teff, star_teff_up_err) *
+                    (ufloat(secondary_depth, secondary_depth_up_err) ** (1 / 4)) /
+                    (ufloat(depth, depth_up_err) ** (1 / 4)))
+        return teff_low.n, teff_low.s, teff_up.s
+
+    def calculate_planet_temperature_stat(self, teq, teq_low_err, teq_up_err, teff, teff_low_err, teff_up_err):
+        stat_low = ufloat(teff, teff_low_err) / ufloat(teq, teq_low_err)
+        stat_up = ufloat(teff, teff_up_err) / ufloat(teq, teq_up_err)
+        max_err_index = np.argmax([stat_low.s, stat_up.s])
+        return stat_low.n / stat_low.s if max_err_index == 0 else stat_up.n / stat_up.s
+
+    def calculate_albedo(self, secondary_depth, secondary_depth_low_err, secondary_depth_up_err,
+                         period, period_low_err, period_up_err, star_mass, star_mass_low_err, star_mass_up_err,
+                         planet_radius, planet_radius_low_err, planet_radius_up_err
+                         ):
+        a, a_low_err, a_up_err = self.calculate_semi_major_axis(period, period_low_err, period_up_err,
+                                                                star_mass, star_mass_low_err, star_mass_up_err)
+        a_rsun = LcbuilderHelper.convert_from_to(a, u.au, u.R_sun)
+        a_low_err_rsun = LcbuilderHelper.convert_from_to(a_low_err, u.au, u.R_sun)
+        a_up_err_rsun = LcbuilderHelper.convert_from_to(a_up_err, u.au, u.R_sun)
+        albedo_low = (ufloat(secondary_depth, secondary_depth_low_err) * (ufloat(a_rsun, a_low_err_rsun) ** 2) /
+                      (ufloat(planet_radius, planet_radius_low_err) ** 2))
+        albedo_up = (ufloat(secondary_depth, secondary_depth_up_err) * (ufloat(a_rsun, a_up_err_rsun) ** 2) /
+                      (ufloat(planet_radius, planet_radius_up_err) ** 2))
+        return albedo_low.n, albedo_low.s, albedo_up.s
+
+    def calculate_albedo_stat(self, albedo, albedo_low_err, albedo_up_err):
+        max_albedo_index = np.argmax([albedo_low_err, albedo_up_err])
+        return (1 - albedo) / albedo_low_err if max_albedo_index == 0 else (1 - albedo) / albedo_up_err
 
     def get_TSM_scale_factor(self, radius):
         if radius <= 1.5:
