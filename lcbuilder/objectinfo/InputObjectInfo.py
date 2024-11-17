@@ -12,7 +12,7 @@ class InputObjectInfo(ObjectInfo):
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
-                 oscillation_min_period=0.002, oscillation_max_period=0.2, object_info=1,
+                 oscillation_min_period=0.002, oscillation_max_period=0.2, binning=0,
                  truncate_border=0, lower_outliers_sigma: float = None, initial_trim: float = None,
                  search_engine='cpu'):
         """
@@ -47,7 +47,7 @@ class InputObjectInfo(ObjectInfo):
                          auto_detrend_enabled, auto_detrend_method, auto_detrend_ratio, auto_detrend_period,
                          prepare_algorithm, reduce_simple_oscillations, oscillation_snr_threshold,
                          oscillation_amplitude_threshold, oscillation_ws_scale, oscillation_min_period,
-                         oscillation_max_period, object_info, truncate_border,
+                         oscillation_max_period, binning, truncate_border,
                          lower_outliers_sigma=lower_outliers_sigma, initial_trim=initial_trim,
                          search_engine=search_engine)
         self.input_file = input_file

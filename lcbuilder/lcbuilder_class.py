@@ -18,6 +18,7 @@ from wotan import flatten
 
 from lcbuilder import constants
 from lcbuilder.helper import LcbuilderHelper
+from lcbuilder.objectinfo.preparer.mission_data_preparer import MissionDataPreparer
 from lcbuilder.star.starinfo import StarInfo
 
 from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
@@ -53,10 +54,7 @@ class LcBuilder:
         lc_build = self.lightcurve_builders[type(object_info)].build(object_info, object_dir, caches_root_dir)
         if lc_build.tpf_apertures is not None:
             with open(object_dir + "/apertures.yaml", 'w') as f:
-                apertures = {int(sector): [aperture.tolist() if isinstance(aperture, numpy.ndarray) else aperture
-                                           for aperture in apertures]
-                             for sector, apertures in lc_build.tpf_apertures.items()}
-                apertures = {"sectors": apertures}
+                apertures = {"sectors": lc_build.tpf_apertures}
                 f.write(yaml.dump(apertures, default_flow_style=True))
         sherlock_id = object_info.sherlock_id()
         star_info = self.__complete_star_info(object_info.mission_id(), object_info.star_info, lc_build.star_info,
@@ -71,17 +69,19 @@ class LcBuilder:
             flux_float = flux_float[initial_trim_args]
             flux_err_float = flux_err_float[initial_trim_args]
         lc = lightkurve.LightCurve(time=time_float, flux=flux_float, flux_err=flux_err_float)
-        lc_df = pandas.DataFrame(columns=['#time', 'flux', 'flux_err', 'sector'])
+        lc_df = pandas.DataFrame(columns=['time', 'flux', 'flux_err', 'sector'])
         time_float = numpy.array(time_float)
         flux_float = numpy.array(flux_float)
         flux_err_float = numpy.array(flux_err_float)
-        lc_df['#time'] = time_float
+        lc_df['time'] = time_float
         lc_df['flux'] = flux_float
         lc_df['flux_err'] = flux_err_float
         if lc_build.sectors_to_start_end_times is not None and len(lc_build.sectors_to_start_end_times.keys()) > 0:
-            for key in lc_build.sectors_to_start_end_times.keys():
-                lc_df.loc[(lc_df['#time'] >= lc_build.sectors_to_start_end_times[key][0]) &
-                          (lc_df['#time'] <= lc_build.sectors_to_start_end_times[key][1]), 'sector'] = key
+            for sector, author_cadence_data in lc_build.sectors_to_start_end_times.items():
+                for author, cadence_data in author_cadence_data.items():
+                    for cadence, sectors_to_start_end_times in cadence_data.items():
+                        lc_df.loc[(lc_df['time'] >= sectors_to_start_end_times[0]) &
+                                  (lc_df['time'] <= sectors_to_start_end_times[1]), 'sector'] = sector
         lc_df.to_csv(object_dir + "lc.csv", index=False)
         lc = lc.remove_outliers(sigma_lower=float('inf') if object_info.lower_outliers_sigma is None else object_info.lower_outliers_sigma,
                                 sigma_upper=object_info.outliers_sigma)
@@ -517,11 +517,10 @@ class LcBuilder:
         clean_time = time
         clean_flux = flux
         clean_flux_err = flux_err
-        is_short_cadence = cadence <= 300
         lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
-        if (object_info.binning > 1) or (object_info.prepare_algorithm) or (
-                is_short_cadence and object_info.smooth_enabled) or (
-                object_info.high_rms_enabled and object_info.initial_mask is None) or object_info.truncate_border > 0:
+        if (object_info.binning > 0 or object_info.prepare_algorithm or
+                object_info.smooth_enabled or
+                (object_info.high_rms_enabled and object_info.initial_mask is None) or object_info.truncate_border > 0):
             logging.info('================================================')
             logging.info('INITIAL FLUX CLEANING')
             logging.info('================================================')
@@ -530,9 +529,8 @@ class LcBuilder:
                 LcbuilderHelper.truncate_borders(clean_time, clean_flux, clean_flux_err, truncate_border=object_info.truncate_border)
             lc = lightkurve.LightCurve(time=clean_time, flux=clean_flux, flux_err=clean_flux_err)
             lc = lc.remove_nans()
-        if object_info.binning > 1:
-            bins = len(clean_time) / object_info.binning
-            bin_edges_for_time = numpy.arange(clean_time[0], clean_time[-1], (cadence / 24 / 60 / 60) * object_info.binning)
+        if object_info.binning > 0:
+            bin_edges_for_time = numpy.arange(clean_time[0], clean_time[-1], object_info.binning)
             bin_means, bin_edges, binnumber = stats.binned_statistic(clean_time, clean_flux, statistic='mean',
                                                                      bins=bin_edges_for_time)
             bin_stds, _, _ = stats.binned_statistic(clean_time, clean_flux, statistic='std', bins=bin_edges_for_time)
@@ -686,7 +684,7 @@ class LcBuilder:
                           oscillation_min_period=0.002, oscillation_max_period=0.2, binning=1, truncate_border=0,
                           lower_outliers_sigma: float = None, initial_trim: float = None,
                           initial_trim_sectors: int = None, search_engine='cpu'):
-        mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target_name)
+        mission, mission_prefix, id = MissionDataPreparer.parse_object_id(target_name)
         coords = None if mission is not None else self.parse_coords(target_name)
         cadence = cadence if cadence is not None else self.DEFAULT_CADENCES_FOR_MISSION[mission]
         if (mission is not None or coords is not None) and file is None:
@@ -728,15 +726,16 @@ class LcBuilder:
                 "cadence={}".format(target_name, mission, id, coords, sectors, file, cadence))
 
     def parse_object_info(self, target: str):
-        return MissionLightcurveBuilder().parse_object_id(target)
+        return MissionDataPreparer.parse_object_id(target)
 
     def get_default_author(self, target, cadence):
-        mission, mission_prefix, id = MissionLightcurveBuilder().parse_object_id(target)
+        mission, mission_prefix, id = MissionDataPreparer.parse_object_id(target)
         if mission == constants.MISSION_KEPLER:
             author = constants.KEPLER_AUTHOR
         elif mission == constants.MISSION_K2:
             author = constants.K2_AUTHOR
-        elif mission == constants.MISSION_TESS and ((cadence == 'short' or cadence == 'fast') or cadence < 600):
+        elif mission == constants.MISSION_TESS and ((cadence == 'short' or cadence == 'fast') or
+                                                    (not isinstance(cadence, (str)) and cadence < 600)):
             author = constants.SPOC_AUTHOR
         elif mission == constants.MISSION_TESS and (cadence == 'long' or cadence >= 600):
             author = constants.TESS_SPOC_AUTHOR

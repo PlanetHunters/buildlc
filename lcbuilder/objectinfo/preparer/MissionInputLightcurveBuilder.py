@@ -2,6 +2,7 @@ import logging
 import lightkurve as lk
 
 from lcbuilder.LcBuild import LcBuild
+from lcbuilder.objectinfo.preparer.mission_data_preparer import MissionDataPreparer
 from lcbuilder.star import starinfo
 from lcbuilder.objectinfo.MissionInputObjectInfo import MissionInputObjectInfo
 from lcbuilder.objectinfo.preparer.LightcurveBuilder import LightcurveBuilder
@@ -17,7 +18,7 @@ class MissionInputLightcurveBuilder(LightcurveBuilder):
         sherlock_id = object_info.sherlock_id()
         if isinstance(object_info, MissionInputObjectInfo):
             logging.info("Retrieving star catalog info...")
-            mission, mission_prefix, id = super().parse_object_id(mission_id)
+            mission, mission_prefix, id = MissionDataPreparer.parse_object_id(mission_id)
             if mission_prefix not in self.star_catalogs:
                 raise ValueError("Wrong object id " + mission_id)
             star_info = starinfo.StarInfo(sherlock_id, *self.star_catalogs[mission_prefix].catalog_info(id))
@@ -27,8 +28,8 @@ class MissionInputLightcurveBuilder(LightcurveBuilder):
             star_info.assume_model_radius()
         logging.info("Loading lightcurve from file " + object_info.input_file + ".")
         df = pd.read_csv(object_info.input_file, float_precision='round_trip', sep=',')
-        lc = lk.LightCurve(time=df['#time'], flux=df['flux'], flux_err=df['flux_err'])
+        lc = lk.LightCurve(time=df['time'], flux=df['flux'], flux_err=df['flux_err'])
         lc_data = self.extract_lc_data_from_df(df)
         transits_min_count = 1
         lc = lc.remove_nans()
-        return LcBuild(lc, lc_data, star_info, transits_min_count, None, None, None, None, None)
+        return LcBuild(lc, lc_data, star_info, transits_min_count, None, None, None, None, None, None, None)

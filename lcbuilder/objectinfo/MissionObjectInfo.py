@@ -7,14 +7,15 @@ class MissionObjectInfo(ObjectInfo):
     """
     Implementation of ObjectInfo to be used to characterize short-cadence objects from TESS, Kepler and K2 missions.
     """
-    def __init__(self, sectors, mission_id: str = None, ra=None, dec=None, author=None, cadence=None, initial_mask=None,
+    def __init__(self, sectors, mission_id: str = None, ra=None, dec=None, author: list = [], cadence: list = [],
+                 initial_mask=None,
                  initial_transit_mask=None, star_info=None, apertures=None,
                  outliers_sigma=3, high_rms_enabled=True, high_rms_threshold=2.5,
                  high_rms_bin_hours=4, smooth_enabled=False,
                  auto_detrend_enabled=False, auto_detrend_method="cosine", auto_detrend_ratio=0.25,
                  auto_detrend_period=None, prepare_algorithm=None, reduce_simple_oscillations=False,
                  oscillation_snr_threshold=4, oscillation_amplitude_threshold=0.1, oscillation_ws_scale=60,
-                 oscillation_min_period=0.002, oscillation_max_period=0.001, binning=1, eleanor_corr_flux="pca_flux",
+                 oscillation_min_period=0.002, oscillation_max_period=0.001, binning=0, eleanor_corr_flux="pca_flux",
                  truncate_border=0, lower_outliers_sigma: float = None, quality_flag='default',
                  initial_trim: float = None, initial_trim_sectors: Optional[int] = None, search_engine='cpu'):
         """

@@ -1,6 +1,6 @@
 import numpy as np
 from astropy.coordinates import SkyCoord
-
+import astropy.units as u
 from lcbuilder.star.StarCatalog import StarCatalog
 from astroquery.mast import Catalogs
 import foldedleastsquares as tls
@@ -44,5 +44,5 @@ class TicStarCatalog(StarCatalog):
                 h, h_err, k, k_err, None, None, None)
 
     def coords_catalog_info(self, ra, dec):
-        ticid = Catalogs.query_region(SkyCoord(ra, dec, unit="deg"), radius=40 * 20.25, catalog="TIC")[0]["ID"]
-        return self.catalog_info(ticid)
+        ticid = Catalogs.query_region(SkyCoord(ra, dec, unit="deg"), radius=(10 * 20.25 / 3600) * u.deg, catalog="TIC")[0]["ID"]
+        return self.catalog_info(int(ticid))
