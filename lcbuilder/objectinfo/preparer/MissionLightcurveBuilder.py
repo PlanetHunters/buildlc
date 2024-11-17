@@ -35,21 +35,21 @@ class MissionLightcurveBuilder(LightcurveBuilder):
             logging.warning("No TPF data %s")
         for tpf_search_result in tpf_search_results:
             # in this logging line i get " TypeError: must be real number, not numpy.str_"
-            logging.info("There are TPF data with author %s: %s, Year %.0f, ExpTime: %.0f",
-                         tpf_search_result.mission[0], str(tpf_search_result.year[0]), tpf_search_result.author[0],
-                         str(tpf_search_result.exptime[0].value))
+            logging.info(f"There are TPF data: {tpf_search_result.mission[0]}, Year "
+                         f"{tpf_search_result.year[0]}, Author: {tpf_search_result.mission[0]}, ExpTime: "
+                         f"{tpf_search_result.exptime[0].value}")
         if len(tpf_searchcut_results) == 0:
             logging.warning("No TessCut data %s")
         for tpf_searchcut_result in tpf_searchcut_results:
-            logging.info("There are TessCut data: %s, Year %.0f, Author: %s, ExpTime: %.0f",
-                         tpf_searchcut_result.mission[0], str(tpf_searchcut_result.year[0]), tpf_searchcut_result.author[0],
-                         str(tpf_searchcut_result.exptime[0].value))
+            logging.info(f"There are TessCut data: {tpf_searchcut_result.mission[0]}, Year "
+                         f"{tpf_searchcut_result.year[0]}, Author: {tpf_searchcut_result.author[0]}, ExpTime: "
+                         f"{tpf_searchcut_result.exptime[0].value}")
         if len(lc_search_results) == 0:
             logging.warning("No LightCurve data with author")
         for lc_search_result in lc_search_results:
-            logging.info("There are LightCurve data: %s, Year %.0f, Author: %s, ExpTime: %.0f",
-                         lc_search_result.mission[0], str(lc_search_result.year[0]), lc_search_result.author[0],
-                         str(lc_search_result.exptime[0].value))
+            logging.info(f"There are LightCurve data: {lc_search_result.mission[0]}, Year "
+                         f"{lc_search_result.year[0]}, Author: {lc_search_result.author[0]}, ExpTime: "
+                         f"{lc_search_result.exptime[0].value}")
 
     def get_star_info(self, object_info: MissionObjectInfo) -> starinfo.StarInfo:
         logging.info("Retrieving star catalog info")
