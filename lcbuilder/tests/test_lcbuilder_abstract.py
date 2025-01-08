@@ -1,14 +1,6 @@
 import os
 import shutil
 import unittest
-import numpy as np
-from lcbuilder.helper import LcbuilderHelper
-
-from lcbuilder.lcbuilder_class import LcBuilder
-from lcbuilder.objectinfo.InputObjectInfo import InputObjectInfo
-from lcbuilder.objectinfo.MissionInputObjectInfo import MissionInputObjectInfo
-from lcbuilder.objectinfo.MissionObjectInfo import MissionObjectInfo
-from lcbuilder import constants
 
 
 class TestsLcBuilderAbstract(unittest.TestCase):
