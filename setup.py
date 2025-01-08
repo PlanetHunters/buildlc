@@ -27,6 +27,7 @@ setuptools.setup(
                         #'eleanor==2.0.5', included with submodule
                         'pandas==1.5.3',
                         "lightkurve==2.4.2",
+                        "matplotlib==3.8.2",
                         "photutils==1.10.0",
                         "pybind11==2.11.1",
                         "scipy==1.11.4",
